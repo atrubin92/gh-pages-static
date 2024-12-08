@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two EditText, TextView, and Buttons</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 250px;
+        }
+        .field-group {
+            margin-bottom: 10px;
+        }
+        .field-group label {
+            display: inline-block;
+            width: 80px;
+            font-weight: bold;
+        }
+
+        .buttons {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+        }
+        .buttons button {
+            margin-right: 10px;
+            margin-bottom: 10px;
+            flex: 1;
+            box-sizing: border-box;
+        }
+        .taller-btn {
+            height: 60px; /* Taller height for specific buttons */
+        }
+        #textView {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="field-group">
+            <label for="caloriesDay">Calories day:</label>
+            <input type="text" id="caloriesDay" placeholder="Enter text..." />
+        </div>
+        
+        <div class="field-group">
+            <label for="caloriesTraining">Calories training:</label>
+            <input type="text" id="caloriesTraining" placeholder="Enter text..." />
+        </div>
+        
+        <div class="buttons">
+            <button id="updateInitialCalories">update initial calories</button>
+        </div>
+        
+        <div class="buttons taller-btn">
+            <button id="plusOne">+1</button>
+            <button id="plusTen">+10</button>
+        </div>
+
+        <div class="field-group">
+            <span id="textViewRemainderMinutes">0</span>
+        </div>
+        <div class="field-group">
+            <span id="textViewRemainder1000">0</span>
+        </div>
+        <div class="field-group">
+            <span id="textViewRemainder1134">0</span>
+        </div>
+
+        <div class="field-group">
+            <span id="textViewSpeed1000">0</span>
+        </div>
+        <div class="field-group">
+            <span id="textViewSpeed1134">0</span>
+        </div>
+    </div>
+
+    <script>
+        let currentCaloris = 0;
+
+        const caloriesDayInput = document.getElementById('caloriesDay');
+        const caloriesTrainingInput = document.getElementById('caloriesTraining');
+
+        const updateInitialCaloriesBtn = document.getElementById('updateInitialCalories');
+
+        const plusOneBtn = document.getElementById('plusOne');
+        const plusTenBtn = document.getElementById('plusTen');
+
+        const textViewRemainderMinutes = document.getElementById('textViewRemainderMinutes');
+        const textViewRemainder1000 = document.getElementById('textViewRemainder1000');
+        const textViewRemainder1134 = document.getElementById('textViewRemainder1134');
+        const textViewSpeed1000 = document.getElementById('textViewSpeed1000');
+        const textViewSpeed1134 = document.getElementById('textViewSpeed1134');
+
+        updateInitialCaloriesBtn.addEventListener('click', () => {
+            currentCaloris = parseInt(caloriesDayInput.value, 10) + parseInt(caloriesTrainingInput.value, 10)
+            updateTextViews()
+        });
+
+        plusOneBtn.addEventListener('click', () => {
+            updateInputFildes(1)
+            updateTextViews()
+        });
+
+        plusTenBtn.addEventListener('click', () => {
+            updateInputFildes(10)
+            updateTextViews()
+        });
+
+        function updateInputFildes(addValue){
+            currentCaloris += addValue;
+            caloriesDayInput.value = currentCaloris
+            caloriesTrainingInput.value = parseInt(caloriesTrainingInput.value, 10) + addValue
+        }
+
+        function updateTextViews() {
+            const minutes = minutesUntilEndOfDay()
+
+            const remainder1000 = 1000 - currentCaloris
+            const remainder1134 = 1134 - currentCaloris
+
+            textViewRemainderMinutes.textContent = minutes.toFixed(2);
+            textViewRemainder1000.textContent = remainder1000.toFixed(0);
+            textViewRemainder1134.textContent = remainder1134.toFixed(0);
+            textViewSpeed1000.textContent = (remainder1000 / minutes).toFixed(3);
+            textViewSpeed1134.textContent =  (remainder1134 / minutes).toFixed(3);
+        }
+
+        function minutesUntilEndOfDay() {
+            // Get current date and time
+            const now = new Date();
+
+            // Create a new Date object set to midnight (end of the current day)
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+
+            // Calculate the difference in milliseconds
+            const diffInMs = endOfDay - now;
+
+            // Convert milliseconds to minutes (1 minute = 60,000 ms)
+            const diffInMinutes = diffInMs / 60000;
+
+            return diffInMinutes; // This will be a double (floating-point) number
+        }
+
+        function runInterval() {
+            updateTextViews();
+            setTimeout(runInterval, 1_000); // run again after 1s
+        }
+        runInterval();
+    </script>
+</body>
+</html>
