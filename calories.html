@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Two EditText, TextView, and Buttons</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 2px;
         }
         .container {
-            max-width: 250px;
+            max-width: 220px;
         }
         .field-group {
-            margin-bottom: 10px;
+            margin-bottom: 2px;
         }
         .field-group label {
             display: inline-block;
-            width: 80px;
-            font-weight: bold;
+            width: 220px;
         }
 
         .buttons {
@@ -69,15 +67,9 @@
         <div class="field-group">
             <span id="textViewRemainder1000">0</span>
         </div>
-        <div class="field-group">
-            <span id="textViewRemainder1134">0</span>
-        </div>
 
         <div class="field-group">
             <span id="textViewSpeed1000">0</span>
-        </div>
-        <div class="field-group">
-            <span id="textViewSpeed1134">0</span>
         </div>
     </div>
 
@@ -94,9 +86,7 @@
 
         const textViewRemainderMinutes = document.getElementById('textViewRemainderMinutes');
         const textViewRemainder1000 = document.getElementById('textViewRemainder1000');
-        const textViewRemainder1134 = document.getElementById('textViewRemainder1134');
         const textViewSpeed1000 = document.getElementById('textViewSpeed1000');
-        const textViewSpeed1134 = document.getElementById('textViewSpeed1134');
 
         updateInitialCaloriesBtn.addEventListener('click', () => {
             currentCaloris = parseInt(caloriesDayInput.value, 10) + parseInt(caloriesTrainingInput.value, 10)
@@ -123,13 +113,10 @@
             const minutes = minutesUntilEndOfDay()
 
             const remainder1000 = 1000 - currentCaloris
-            const remainder1134 = 1134 - currentCaloris
 
             textViewRemainderMinutes.textContent = minutes.toFixed(2);
             textViewRemainder1000.textContent = remainder1000.toFixed(0);
-            textViewRemainder1134.textContent = remainder1134.toFixed(0);
             textViewSpeed1000.textContent = (remainder1000 / minutes).toFixed(3);
-            textViewSpeed1134.textContent =  (remainder1134 / minutes).toFixed(3);
         }
 
         function minutesUntilEndOfDay() {
