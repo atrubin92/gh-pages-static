@@ -9,16 +9,19 @@
             margin: 2px;
         }
         .container {
-            max-width: 220px;
+            max-width: 100%;
         }
         .field-group {
+            width: 100%;
             margin-bottom: 2px;
         }
         .field-group label {
             display: inline-block;
-            width: 220px;
         }
 
+        .input {
+            width: 95%;
+        }
         .buttons {
             display: flex;
             width: 100%;
@@ -43,19 +46,24 @@
 <body>
     <div class="container">
         <div class="field-group">
-            <label for="caloriesDay">Calories day:</label>
-            <input type="text" id="caloriesDay" placeholder="Enter text..." />
+            <label for="caloriesGoal">Calories Goal:</label>
+            <input class="input" type="text" id="caloriesGoal" value="1100" />
         </div>
-        
+
+        <div class="field-group">
+            <label for="caloriesDay">Calories day:</label>
+            <input class="input" type="text" id="caloriesDay" value="0" />
+        </div>
+
         <div class="field-group">
             <label for="caloriesTraining">Calories training:</label>
-            <input type="text" id="caloriesTraining" placeholder="Enter text..." />
+            <input class="input" type="text" id="caloriesTraining" value="0" />
         </div>
-        
+
         <div class="buttons">
             <button id="updateInitialCalories">update initial calories</button>
         </div>
-        
+
         <div class="buttons taller-btn">
             <button id="plusOne">+1</button>
             <button id="plusTen">+10</button>
@@ -65,17 +73,17 @@
             <span id="textViewRemainderMinutes">0</span>
         </div>
         <div class="field-group">
-            <span id="textViewRemainder1000">0</span>
+            <span id="textViewRemainder">0</span>
         </div>
 
         <div class="field-group">
-            <span id="textViewSpeed1000">0</span>
+            <span id="textViewSpeed">0</span>
         </div>
     </div>
 
     <script>
-        let currentCaloris = 0;
 
+        const caloriesGoalInput = document.getElementById('caloriesGoal');
         const caloriesDayInput = document.getElementById('caloriesDay');
         const caloriesTrainingInput = document.getElementById('caloriesTraining');
 
@@ -85,11 +93,15 @@
         const plusTenBtn = document.getElementById('plusTen');
 
         const textViewRemainderMinutes = document.getElementById('textViewRemainderMinutes');
-        const textViewRemainder1000 = document.getElementById('textViewRemainder1000');
-        const textViewSpeed1000 = document.getElementById('textViewSpeed1000');
+        const textViewRemainder = document.getElementById('textViewRemainder');
+        const textViewSpeed = document.getElementById('textViewSpeed');
+
+        let currentCaloris = 0;
+        let currentCalorisGoal = parseInt(caloriesGoalInput.value, 10);
 
         updateInitialCaloriesBtn.addEventListener('click', () => {
-            currentCaloris = parseInt(caloriesDayInput.value, 10) + parseInt(caloriesTrainingInput.value, 10)
+            currentCalorisGoal = parseInt(caloriesGoalInput.value, 10)
+            currentCaloris = parseInt(caloriesDayInput.value, 10)
             updateTextViews()
         });
 
@@ -112,11 +124,11 @@
         function updateTextViews() {
             const minutes = minutesUntilEndOfDay()
 
-            const remainder1000 = 1000 - currentCaloris
+            const remainder = currentCalorisGoal - currentCaloris
 
             textViewRemainderMinutes.textContent = minutes.toFixed(2);
-            textViewRemainder1000.textContent = remainder1000.toFixed(0);
-            textViewSpeed1000.textContent = (remainder1000 / minutes).toFixed(3);
+            textViewRemainder.textContent = remainder.toFixed(0);
+            textViewSpeed.textContent = (remainder / minutes).toFixed(3);
         }
 
         function minutesUntilEndOfDay() {
