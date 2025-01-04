@@ -18,9 +18,13 @@
         .field-group label {
             display: inline-block;
         }
+        .field-result {
+            font-size: 200%;
+        }
 
         .input {
             width: 95%;
+            font-size: 200%;
         }
         .buttons {
             display: flex;
@@ -35,11 +39,6 @@
         }
         .taller-btn {
             height: 60px; /* Taller height for specific buttons */
-        }
-        #textView {
-            display: inline-block;
-            margin-left: 10px;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -69,14 +68,14 @@
             <button id="plusTen">+10</button>
         </div>
 
-        <div class="field-group">
+        <div class="field-result">
             <span id="textViewRemainderMinutes">0</span>
         </div>
-        <div class="field-group">
+        <div class="field-result">
             <span id="textViewRemainder">0</span>
         </div>
 
-        <div class="field-group">
+        <div class="field-result">
             <span id="textViewSpeed">0</span>
         </div>
     </div>
