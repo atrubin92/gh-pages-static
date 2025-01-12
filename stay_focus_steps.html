@@ -76,20 +76,24 @@
                 nextLevelTimerEl.textContent = "";
             }
 
-            if(remainingSeconds < 0) {
-                if (moveNextLevel == false) {
-                    clearInterval(countdown);
-                    document.body.style.backgroundColor = "red";
-                    currentLevelTimerEl.textContent = "time is up"
-                } else {
-                    intervalSeconds += additionalSecondPerRound;
-                    timerStart = new Date();
-                }
-                nextLevelResultEl.textContent = "current level: " + (Math.floor(intervalSeconds / additionalSecondPerRound));
-                nextLevelTimerEl.textContent = "";
-                nextLevelTimerStart = new Date();
-                moveNextLevel = false;
+            if(remainingSeconds >= 0) {
+                return
             }
+            
+            if (moveNextLevel == false) {
+                clearInterval(countdown);
+                document.body.style.backgroundColor = "red";
+                currentLevelTimerEl.textContent = "time is up"
+            } else {
+                let timeInMilliseconds = timerStart.getTime();
+                timeInMilliseconds += intervalSeconds * 1_000;
+                timerStart.setTime(timeInMilliseconds);
+                intervalSeconds += additionalSecondPerRound;
+            }
+            nextLevelResultEl.textContent = "current level: " + (Math.floor(intervalSeconds / additionalSecondPerRound));
+            nextLevelTimerEl.textContent = "";
+            nextLevelTimerStart = new Date();
+            moveNextLevel = false;
         }
 
         let countdown = setInterval(updateTimer, 100);
