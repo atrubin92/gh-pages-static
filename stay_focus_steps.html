@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Focus Timer</title>
+    <style>
+        html,
+        body {
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #currentLevelTimer {
+            font-size: 7em; /* Keep large font size for now */
+        }
+        #nextLevelResult {
+            font-size: 2em;
+            }
+        #nextLevelTimer {
+            font-size: 2em;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: auto;
+        }
+        button {
+            padding: 5px 10px;
+            font-size: 1em;
+        }
+        h1 {
+            margin: 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stay Focused</h1>
+        <div id="currentLevelTimer"></div>
+        <div id="nextLevelResult"></div>
+        <div id="nextLevelTimer"></div>
+    </div>
+
+    <script>
+        let additionalSecondPerRound = 10;
+        let intervalSeconds = additionalSecondPerRound;
+
+        const secondsPerMinute = 60
+
+        const currentLevelTimerEl = document.getElementById('currentLevelTimer');
+        const nextLevelResultEl = document.getElementById('nextLevelResult');
+        const nextLevelTimerEl = document.getElementById('nextLevelTimer');
+
+        nextLevelResultEl.textContent = "current level: 1"
+        nextLevelTimerEl.textContent = "123"
+
+        let moveNextLevel = false
+
+        let nextLevelTimerStart = new Date();
+
+        let timerStart = new Date();
+
+        function updateTimer() {
+            const remainingSeconds = Math.floor(intervalSeconds - (new Date() - timerStart) / 1_000)
+            const minutes = Math.floor(Math.abs(remainingSeconds) / secondsPerMinute);
+            const seconds = Math.abs(remainingSeconds) % secondsPerMinute;
+            currentLevelTimerEl.textContent = `${minutes}:${seconds.toFixed(0).padStart(2,'0')}`;
+
+            const nextLevelMilliseconds = nextLevelTimerStart.getTime() - new Date();
+            if (nextLevelMilliseconds > 0 && moveNextLevel == false){
+                const nextLevelSecondsStr = Math.floor(nextLevelMilliseconds / 1_000);
+                const nextLevelMillisecondsStr = Math.floor((nextLevelMilliseconds % 1_000)/100);
+                nextLevelTimerEl.textContent = nextLevelSecondsStr + '.' + nextLevelMillisecondsStr;
+            } else {
+                nextLevelTimerEl.textContent = "";
+            }
+
+            if(remainingSeconds < 0) {
+                if (moveNextLevel == false) {
+                    clearInterval(countdown);
+                    document.body.style.backgroundColor = "red";
+                    currentLevelTimerEl.textContent = "time is up"
+                } else {
+                    intervalSeconds += additionalSecondPerRound;
+                    timerStart = new Date();
+                }
+                nextLevelResultEl.textContent = "current level: " + (Math.floor(intervalSeconds / additionalSecondPerRound));
+                nextLevelTimerEl.textContent = "";
+                nextLevelTimerStart = new Date();
+                moveNextLevel = false;
+            }
+        }
+
+        let countdown = setInterval(updateTimer, 100);
+
+        document.body.addEventListener('click', () => {
+            if (moveNextLevel){
+                return
+            }
+
+            if (nextLevelTimerStart.getTime() - new Date() < 0){
+                nextLevelTimerStart = new Date()
+            }
+            let timeInMilliseconds = nextLevelTimerStart.getTime();
+            timeInMilliseconds += 1000;
+            nextLevelTimerStart.setTime(timeInMilliseconds);
+
+            if (nextLevelTimerStart.getTime() - new Date() > 3_000){
+                nextLevelResultEl.textContent = "next level: " + (Math.floor(intervalSeconds / additionalSecondPerRound)+1);
+                moveNextLevel = true;
+                nextLevelTimerEl.textContent = "";
+                return
+            }
+        });
+    </script>
+</body>
+</html>
