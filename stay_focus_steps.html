@@ -47,6 +47,7 @@
         let intervalSeconds = additionalSecondPerRound;
 
         const secondsPerMinute = 60
+        const millisecondsPerSecond = 1_000
 
         const currentLevelTimerEl = document.getElementById('currentLevelTimer');
         const nextLevelResultEl = document.getElementById('nextLevelResult');
@@ -62,21 +63,21 @@
         let timerStart = new Date();
 
         function updateTimer() {
-            const remainingSeconds = Math.floor(intervalSeconds - (new Date() - timerStart) / 1_000)
+            const remainingSeconds = Math.floor(intervalSeconds - (new Date() - timerStart) / millisecondsPerSecond)
             const minutes = Math.floor(Math.abs(remainingSeconds) / secondsPerMinute);
             const seconds = Math.abs(remainingSeconds) % secondsPerMinute;
-            currentLevelTimerEl.textContent = `${minutes}:${seconds.toFixed(0).padStart(2,'0')}`;
 
             const nextLevelMilliseconds = nextLevelTimerStart.getTime() - new Date();
             if (nextLevelMilliseconds > 0 && moveNextLevel == false){
-                const nextLevelSecondsStr = Math.floor(nextLevelMilliseconds / 1_000);
-                const nextLevelMillisecondsStr = Math.floor((nextLevelMilliseconds % 1_000)/100);
+                const nextLevelSecondsStr = Math.floor(nextLevelMilliseconds / millisecondsPerSecond);
+                const nextLevelMillisecondsStr = Math.floor((nextLevelMilliseconds % millisecondsPerSecond)/100);
                 nextLevelTimerEl.textContent = nextLevelSecondsStr + '.' + nextLevelMillisecondsStr;
             } else {
                 nextLevelTimerEl.textContent = "";
             }
 
             if(remainingSeconds >= 0) {
+                currentLevelTimerEl.textContent = `${minutes}:${seconds.toFixed(0).padStart(2,'0')}`;
                 return
             }
             
@@ -86,7 +87,7 @@
                 currentLevelTimerEl.textContent = "time is up"
             } else {
                 let timeInMilliseconds = timerStart.getTime();
-                timeInMilliseconds += intervalSeconds * 1_000;
+                timeInMilliseconds += intervalSeconds * millisecondsPerSecond;
                 timerStart.setTime(timeInMilliseconds);
                 intervalSeconds += additionalSecondPerRound;
             }
@@ -107,10 +108,10 @@
                 nextLevelTimerStart = new Date()
             }
             let timeInMilliseconds = nextLevelTimerStart.getTime();
-            timeInMilliseconds += 1000;
+            timeInMilliseconds += millisecondsPerSecond;
             nextLevelTimerStart.setTime(timeInMilliseconds);
 
-            if (nextLevelTimerStart.getTime() - new Date() > 3_000){
+            if (nextLevelTimerStart.getTime() - new Date() > 3*millisecondsPerSecond){
                 nextLevelResultEl.textContent = "next level: " + (Math.floor(intervalSeconds / additionalSecondPerRound)+1);
                 moveNextLevel = true;
                 nextLevelTimerEl.textContent = "";
