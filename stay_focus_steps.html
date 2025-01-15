@@ -113,7 +113,8 @@
             nextLevelTimerStart.setTime(timeInMilliseconds);
 
             if (nextLevelTimerStart.getTime() - new Date() > 3*millisecondsPerSecond){
-                nextLevelResultEl.textContent = "next level: " + (Math.floor(intervalSeconds / additionalSecondPerRound)+1);
+                const currentLevelValue = Math.floor(intervalSeconds / additionalSecondPerRound);
+                nextLevelResultEl.textContent = "level: " + currentLevelValue + " ➙ " + (currentLevelValue+1);
                 moveNextLevel = true;
                 nextLevelTimerEl.textContent = "";
                 return
