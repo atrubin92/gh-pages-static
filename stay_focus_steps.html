@@ -86,6 +86,7 @@
                 clearInterval(countdown);
                 document.body.style.backgroundColor = "red";
                 currentLevelTimerEl.textContent = "time is up"
+                document.body.removeEventListener('click', nextLevelClickHandler);
             } else {
                 let timeInMilliseconds = timerStart.getTime();
                 timeInMilliseconds += intervalSeconds * millisecondsPerSecond;
@@ -100,7 +101,7 @@
 
         let countdown = setInterval(updateTimer, 100);
 
-        document.body.addEventListener('click', () => {
+        const nextLevelClickHandler = () => {
             if (moveNextLevel){
                 return
             }
@@ -119,7 +120,8 @@
                 nextLevelTimerEl.textContent = "";
                 return
             }
-        });
+        };
+        document.body.addEventListener('click', nextLevelClickHandler);
     </script>
 </body>
 </html>
