@@ -39,7 +39,10 @@
             box-sizing: border-box;
         }
         .taller-btn {
-            height: 160px; /* Taller height for specific buttons */
+            height: 160px;
+        }
+        .taller-btn button {
+            font-size: 30px;
         }
         .taller-btn button {
             font-size: 30px;
@@ -85,7 +88,6 @@
     </div>
 
     <script>
-
         const caloriesGoalInput = document.getElementById('caloriesGoal');
         const caloriesDayInput = document.getElementById('caloriesDay');
         const caloriesTrainingInput = document.getElementById('caloriesTraining');
@@ -135,24 +137,20 @@
         }
 
         function minutesUntilEndOfDay() {
-            // Get current date and time
             const now = new Date();
 
-            // Create a new Date object set to midnight (end of the current day)
             const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
 
-            // Calculate the difference in milliseconds
             const diffInMs = endOfDay - now;
 
-            // Convert milliseconds to minutes (1 minute = 60,000 ms)
             const diffInMinutes = diffInMs / 60000;
 
-            return diffInMinutes; // This will be a double (floating-point) number
+            return diffInMinutes;
         }
 
         function runInterval() {
             updateTextViews();
-            setTimeout(runInterval, 1_000); // run again after 1s
+            setTimeout(runInterval, 1_000);
         }
         runInterval();
     </script>
