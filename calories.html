@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,16 +10,20 @@
             margin: 2px;
             touch-action: manipulation;
         }
+
         .container {
             max-width: 100%;
         }
+
         .field-group {
             width: 100%;
             margin-bottom: 2px;
         }
+
         .field-group label {
             display: inline-block;
         }
+
         .field-result {
             font-size: 50px;
         }
@@ -27,28 +32,34 @@
             width: 95%;
             font-size: 50px;
         }
+
         .buttons {
             display: flex;
             width: 100%;
             gap: 10px;
         }
+
         .buttons button {
             margin-right: 10px;
             margin-bottom: 10px;
             flex: 1;
             box-sizing: border-box;
         }
+
         .taller-btn {
             height: 160px;
         }
+
         .taller-btn button {
             font-size: 30px;
         }
+
         .taller-btn button {
             font-size: 30px;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="field-group">
@@ -120,7 +131,7 @@
             updateTextViews()
         });
 
-        function updateInputFildes(addValue){
+        function updateInputFildes(addValue) {
             currentCaloris += addValue;
             caloriesDayInput.value = currentCaloris
             caloriesTrainingInput.value = parseInt(caloriesTrainingInput.value, 10) + addValue
@@ -155,4 +166,5 @@
         runInterval();
     </script>
 </body>
+
 </html>

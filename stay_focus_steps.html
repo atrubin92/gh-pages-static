@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Focus Timer</title>
     <style>
@@ -11,30 +12,37 @@
             text-align: center;
             touch-action: manipulation;
         }
+
         #currentLevelTimer {
-            font-size: 7em; /* Keep large font size for now */
+            font-size: 7em;
         }
+
         #nextLevelResult {
             font-size: 2em;
-            }
+        }
+
         #nextLevelTimer {
             font-size: 2em;
         }
+
         .container {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
             overflow: auto;
         }
+
         button {
             padding: 5px 10px;
             font-size: 1em;
         }
+
         h1 {
             margin: 0 0;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Stay Focused</h1>
@@ -69,19 +77,19 @@
             const seconds = Math.abs(remainingSeconds) % secondsPerMinute;
 
             const nextLevelMilliseconds = nextLevelTimerStart.getTime() - new Date();
-            if (nextLevelMilliseconds > 0 && moveNextLevel == false){
+            if (nextLevelMilliseconds > 0 && moveNextLevel == false) {
                 const nextLevelSecondsStr = Math.floor(nextLevelMilliseconds / millisecondsPerSecond);
-                const nextLevelMillisecondsStr = Math.floor((nextLevelMilliseconds % millisecondsPerSecond)/100);
+                const nextLevelMillisecondsStr = Math.floor((nextLevelMilliseconds % millisecondsPerSecond) / 100);
                 nextLevelTimerEl.textContent = nextLevelSecondsStr + '.' + nextLevelMillisecondsStr;
             } else {
                 nextLevelTimerEl.textContent = "";
             }
 
-            if(remainingSeconds >= 0) {
-                currentLevelTimerEl.textContent = `${minutes}:${seconds.toFixed(0).padStart(2,'0')}`;
+            if (remainingSeconds >= 0) {
+                currentLevelTimerEl.textContent = `${minutes}:${seconds.toFixed(0).padStart(2, '0')}`;
                 return
             }
-            
+
             if (moveNextLevel == false) {
                 clearInterval(countdown);
                 document.body.style.backgroundColor = "red";
@@ -102,20 +110,20 @@
         let countdown = setInterval(updateTimer, 100);
 
         const nextLevelClickHandler = () => {
-            if (moveNextLevel){
+            if (moveNextLevel) {
                 return
             }
 
-            if (nextLevelTimerStart.getTime() - new Date() < 0){
+            if (nextLevelTimerStart.getTime() - new Date() < 0) {
                 nextLevelTimerStart = new Date()
             }
             let timeInMilliseconds = nextLevelTimerStart.getTime();
             timeInMilliseconds += millisecondsPerSecond;
             nextLevelTimerStart.setTime(timeInMilliseconds);
 
-            if (nextLevelTimerStart.getTime() - new Date() > 3*millisecondsPerSecond){
+            if (nextLevelTimerStart.getTime() - new Date() > 3 * millisecondsPerSecond) {
                 const currentLevelValue = Math.floor(intervalSeconds / additionalSecondPerRound);
-                nextLevelResultEl.textContent = "level: " + currentLevelValue + " ➙ " + (currentLevelValue+1);
+                nextLevelResultEl.textContent = "level: " + currentLevelValue + " ➙ " + (currentLevelValue + 1);
                 moveNextLevel = true;
                 nextLevelTimerEl.textContent = "";
                 return
@@ -124,4 +132,5 @@
         document.body.addEventListener('click', nextLevelClickHandler);
     </script>
 </body>
+
 </html>

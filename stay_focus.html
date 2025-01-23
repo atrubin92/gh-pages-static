@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Focus Timer</title>
     <style>
@@ -7,18 +8,22 @@
             font-family: Arial, sans-serif;
             text-align: center;
         }
+
         #timer {
             font-size: 7em;
         }
+
         button {
             padding: 10px 20px;
             font-size: 1em;
         }
+
         h1 {
             margin: 0 0;
         }
     </style>
 </head>
+
 <body>
     <h1>Stay Focused</h1>
     <div id="timer"></div>
@@ -35,8 +40,8 @@
             const remainingSeconds = Math.floor(intervalMinutes * 60 - (new Date() - timerStart) / 1_000)
             const minutes = Math.floor(Math.abs(remainingSeconds) / 60);
             const seconds = Math.abs(remainingSeconds) % 60;
-            timerEl.textContent = `${minutes}:${seconds.toFixed(0).padStart(2,'0')}`;
-            if(remainingSeconds < 0) {
+            timerEl.textContent = `${minutes}:${seconds.toFixed(0).padStart(2, '0')}`;
+            if (remainingSeconds < 0) {
                 if (Math.abs(remainingSeconds) % 2) {
                     document.body.style.backgroundColor = "red";
                 } else {
@@ -53,4 +58,5 @@
         });
     </script>
 </body>
+
 </html>
