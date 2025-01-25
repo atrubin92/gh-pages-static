@@ -27,6 +27,7 @@
 
         #endTimeOfLevels {
             font-size: 1em;
+            visibility: hidden;
         }
 
         .container {
@@ -67,6 +68,39 @@
         <div id="nextLevelTimer"></div>
         <div id="endTimeOfLevels"></div>
     </div>
+
+    <script>
+        let longPressTimer;
+
+        const bodyElement = document.body;
+
+        bodyElement.addEventListener('mousedown', (event) => {
+            longPressTimer = setTimeout(() => handleLongPress(event), 1_000);
+        });
+
+        bodyElement.addEventListener('mouseup', () => {
+            clearTimeout(longPressTimer);
+        });
+
+        bodyElement.addEventListener('touchstart', (event) => {
+            longPressTimer = setTimeout(() => handleLongPress(event), 1_000);
+        });
+
+        bodyElement.addEventListener('touchend', () => {
+            clearTimeout(longPressTimer);
+        });
+
+        const endTimeOfLevelsDiv = document.getElementById("endTimeOfLevels");
+
+        function handleLongPress(event) {
+            if (endTimeOfLevelsDiv.style.visibility === "visible") {
+                endTimeOfLevelsDiv.style.visibility = "hidden";
+            } else {
+                endTimeOfLevelsDiv.style.visibility = "visible";
+            }
+            event.preventDefault();
+        }
+    </script>
 
     <script>
         let additionalSecondPerRound = 10;
