@@ -70,12 +70,14 @@
     </div>
 
     <script>
+        const longPressTimeout = 2_000;
+
         let longPressTimer;
 
         const bodyElement = document.body;
 
         bodyElement.addEventListener('mousedown', (event) => {
-            longPressTimer = setTimeout(() => handleLongPress(event), 1_000);
+            longPressTimer = setTimeout(() => handleLongPress(event), longPressTimeout);
         });
 
         bodyElement.addEventListener('mouseup', () => {
@@ -83,7 +85,7 @@
         });
 
         bodyElement.addEventListener('touchstart', (event) => {
-            longPressTimer = setTimeout(() => handleLongPress(event), 1_000);
+            longPressTimer = setTimeout(() => handleLongPress(event), longPressTimeout);
         });
 
         bodyElement.addEventListener('touchend', () => {
