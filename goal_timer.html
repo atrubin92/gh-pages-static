@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Goal Timer</title>
+    <style>
+        html,
+        body {
+            min-height: 100vh;
+            margin: 0;
+            font-family: Courier, monospace;
+            text-align: center;
+            touch-action: manipulation;
+        }
+
+        #currentProgress {
+            font-size: 7em;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: auto;
+        }
+
+        .center-table {
+            margin: 0 auto;
+        }
+
+        .center-table td {
+            text-align: center;
+        }
+
+        .center-cell {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="currentProgress"></div>
+    </div>
+
+    <script>
+        const hoursPerDay = 24
+        const minutesPerHour = 60
+        const secondsPerMinute = 60
+        const millisecondsPerSecond = 1_000
+        const HUNDRED_PERCENT = 100
+
+        const currentProgressEl = document.getElementById('currentProgress')
+
+        const timerStart = new Date(2025, 2, 18, 20, 0, 0)
+        const timerEnd = new Date(2025, 6, 1, 0, 0, 0)
+        const intervalInMs = Math.floor(timerEnd.getTime() - timerStart.getTime())
+
+        function updateTimer() {
+            const completedPercent = (new Date() - timerStart) / intervalInMs * HUNDRED_PERCENT
+            const formattedPercent = completedPercent.toLocaleString(undefined, {
+                minimumIntegerDigits: 2,
+                minimumFractionDigits: 6,
+                maximumFractionDigits: 6
+            });
+
+            currentProgressEl.textContent = `${formattedPercent}%`
+        }
+
+        setInterval(updateTimer, 10)
+    </script>
+</body>
+
+</html>
