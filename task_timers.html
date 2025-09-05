@@ -161,9 +161,10 @@
 
       const timerEl = document.createElement("div");
       timerEl.className = "task-timer";
-      let time = duration;
-      timerEl.textContent = formatTime(time);
-
+      
+      const startTime = new Date();
+      const totalDuration = duration;
+      
       const completeBtn = document.createElement("button");
       completeBtn.className = "complete-btn";
       completeBtn.onclick = () => completeTask(taskDiv, interval);
@@ -174,9 +175,12 @@
       tasksEl.appendChild(taskDiv);
 
       const interval = setInterval(() => {
-        if (time > 0) {
-          time--;
-          timerEl.textContent = formatTime(time);
+        const now = new Date();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        const remainingTime = totalDuration - elapsedSeconds;
+        
+        if (remainingTime > 0) {
+          timerEl.textContent = formatTime(remainingTime);
         } else {
           clearInterval(interval);
           taskDiv.remove();
