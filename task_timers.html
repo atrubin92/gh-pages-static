@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Timers</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      font-size: 20px;
+    }
+    #tasks {
+      margin-top: 20px;
+      width: 100%; /* full width */
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      width: 100%;  /* full width */
+      margin-bottom: 20px;
+    }
+    textarea {
+      resize: vertical;
+      width: 100%;
+      min-height: 100px;
+      max-height: 400px;
+      padding: 10px;
+      font-size: 18px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+      box-sizing: border-box;
+    }
+    .form-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    button {
+      width: 150px;
+      padding: 10px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #currentTime {
+      font-weight: bold;
+      font-size: 22px;
+      text-align: right;
+      width: 80px;       /* fixed width for alignment */
+      margin-right: 20px;
+    }
+    .task {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f1f1f1;
+      padding: 12px 15px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      gap: 10px;
+      font-size: 18px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .task-text {
+      flex: 1;
+      word-break: break-word;
+      white-space: pre-wrap;
+      line-height: 1.4;
+    }
+    .task-timer {
+      flex-shrink: 0;
+      font-weight: bold;
+      text-align: right;
+      width: 80px;
+    }
+    .complete-btn {
+      background: #44aa44;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+    }
+    .complete-btn:hover {
+      background: #339933;
+    }
+    .complete-btn::before {
+      content: "✓";
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <form id="taskForm">
+    <textarea id="taskInput" placeholder="New task" required></textarea>
+    <div class="form-footer">
+      <button type="submit">Add Task</button>
+      <div id="currentTime">00:00</div>
+    </div>
+  </form>
+
+  <div id="tasks"></div>
+
+  <script>
+    // Format MM:SS
+    function formatTime(seconds) {
+      const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+      const s = String(seconds % 60).padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    // Update current clock (HH:MM)
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, "0");
+      const m = String(now.getMinutes()).padStart(2, "0");
+      document.getElementById("currentTime").textContent = `${h}:${m}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    const taskForm = document.getElementById("taskForm");
+    const taskInput = document.getElementById("taskInput");
+    const tasksEl = document.getElementById("tasks");
+
+    taskForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      createTask();
+    });
+
+    // Ctrl+Enter shortcut
+    taskInput.addEventListener("keydown", (e) => {
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        createTask();
+      }
+    });
+
+    function createTask() {
+      const taskName = taskInput.value.trim();
+      if (!taskName) return;
+      addTask(taskName, 300); // 5 minutes default
+      taskInput.value = "";
+    }
+
+    function addTask(name, duration) {
+      const taskDiv = document.createElement("div");
+      taskDiv.className = "task";
+
+      const nameEl = document.createElement("div");
+      nameEl.className = "task-text";
+      nameEl.textContent = name;
+
+      const timerEl = document.createElement("div");
+      timerEl.className = "task-timer";
+      let time = duration;
+      timerEl.textContent = formatTime(time);
+
+      const completeBtn = document.createElement("button");
+      completeBtn.className = "complete-btn";
+      completeBtn.onclick = () => completeTask(taskDiv, interval);
+
+      taskDiv.appendChild(nameEl);
+      taskDiv.appendChild(timerEl);
+      taskDiv.appendChild(completeBtn);
+      tasksEl.appendChild(taskDiv);
+
+      const interval = setInterval(() => {
+        if (time > 0) {
+          time--;
+          timerEl.textContent = formatTime(time);
+        } else {
+          clearInterval(interval);
+          taskDiv.remove();
+        }
+      }, 1000);
+    }
+
+    function completeTask(taskDiv, interval) {
+      clearInterval(interval);
+      taskDiv.remove();
+    }
+
+    // Add default first task (3 minutes)
+    addTask("create first task", 180);
+  </script>
+</body>
+</html>
