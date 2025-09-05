@@ -174,7 +174,7 @@
       taskDiv.appendChild(completeBtn);
       tasksEl.appendChild(taskDiv);
 
-      const interval = setInterval(() => {
+      function updateTaskTimer() {
         const now = new Date();
         const elapsedSeconds = Math.floor((now - startTime) / 1000);
         const remainingTime = totalDuration - elapsedSeconds;
@@ -185,7 +185,12 @@
           clearInterval(interval);
           taskDiv.remove();
         }
-      }, 1000);
+      }
+      
+      // Update immediately
+      updateTaskTimer();
+      
+      const interval = setInterval(updateTaskTimer, 1000);
     }
 
     function completeTask(taskDiv, interval) {
