@@ -187,27 +187,6 @@
       }
     }
     
-    // Keep audio context active with silent sounds
-    function keepAudioContextActive() {
-      if (audioContext && audioContext.state === 'running') {
-        // Play a very short, silent sound to keep the context active
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(1, audioContext.currentTime); // Very low frequency
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime); // Very quiet
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.01);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.01);
-      }
-    }
-    
     // Request wake lock to prevent device from sleeping
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
@@ -541,7 +520,6 @@
     document.addEventListener('mousedown', initAudioContext);
     
     // Keep audio context active every 5 seconds
-    setInterval(keepAudioContextActive, 5000);
     
     // Keep timers running in background by using a more aggressive approach
     let backgroundTimerInterval = null;
