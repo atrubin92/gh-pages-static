@@ -116,6 +116,53 @@
       const s = String(seconds % 60).padStart(2, "0");
       return `${m}:${s}`;
     }
+    
+    // Track all active tasks and find the longest one
+    const activeTasks = [];
+    
+    function updateLongestTask() {
+      if (activeTasks.length === 0) return;
+      
+      // Find the task with the longest remaining time
+      let longest = null;
+      let maxRemainingTime = 0;
+      
+      activeTasks.forEach(task => {
+        const now = new Date();
+        const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
+        const remainingTime = task.totalDuration - elapsedSeconds;
+        
+        if (remainingTime > maxRemainingTime && remainingTime > 0) {
+          maxRemainingTime = remainingTime;
+          longest = task;
+        }
+      });
+      
+      // Update the longest task reference
+      activeTasks.forEach(task => {
+        task.isLongest = (task === longest);
+      });
+    }
+
+    // Play alert sound when timer reaches 1 minute or less
+    function playAlertSound() {
+      // Create a simple beep sound using Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800Hz tone
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    }
 
     // Update current clock (HH:MM)
     function updateClock() {
@@ -164,6 +211,7 @@
       
       const startTime = new Date();
       const totalDuration = duration;
+      let soundPlayed = false; // Track if sound has been played for this timer
       
       const completeBtn = document.createElement("button");
       completeBtn.className = "complete-btn";
@@ -181,16 +229,52 @@
         
         if (remainingTime > 0) {
           timerEl.textContent = formatTime(remainingTime);
+          
+          // Update which task is the longest
+          updateLongestTask();
+          
+          // Play sound only if this is the longest task and reaches 1 minute or less
+          if (remainingTime <= 60 && !soundPlayed && taskData.isLongest) {
+            playAlertSound();
+            soundPlayed = true;
+            taskData.soundPlayed = true;
+          }
         } else {
           clearInterval(interval);
+          // Remove from active tasks
+          const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
+          if (taskIndex !== -1) {
+            activeTasks.splice(taskIndex, 1);
+          }
           taskDiv.remove();
         }
       }
+      
+      // Create task data object
+      const taskData = {
+        taskDiv: taskDiv,
+        startTime: startTime,
+        totalDuration: totalDuration,
+        soundPlayed: false,
+        isLongest: false
+      };
+      
+      // Add to active tasks
+      activeTasks.push(taskData);
       
       // Update immediately
       updateTaskTimer();
       
       const interval = setInterval(updateTaskTimer, 1000);
+      
+      // Update complete button to remove from active tasks
+      completeBtn.onclick = () => {
+        const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
+        if (taskIndex !== -1) {
+          activeTasks.splice(taskIndex, 1);
+        }
+        completeTask(taskDiv, interval);
+      };
     }
 
     function completeTask(taskDiv, interval) {
