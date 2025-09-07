@@ -105,7 +105,6 @@
       <button type="submit">Add Task</button>
       <div id="currentTime">00:00</div>
     </div>
-    <div id="wakeLockStatus" style="font-size: 0.9em; color: #666; margin: 5px 0;"></div>
   </form>
 
   <div id="tasks"></div>
@@ -123,7 +122,6 @@
     let audioContext = null;
     let audioInitialized = false;
     let activeBeepTimeouts = []; // Track active beep timeouts to cancel them
-    let wakeLock = null; // For preventing device sleep
     
     function updateLongestTask() {
       if (activeTasks.length === 0) return;
@@ -187,45 +185,6 @@
       }
     }
     
-    // Request wake lock to prevent device from sleeping
-    async function requestWakeLock() {
-      if ('wakeLock' in navigator) {
-        try {
-          wakeLock = await navigator.wakeLock.request('screen');
-          console.log('Wake lock acquired - device will not sleep');
-          updateWakeLockStatus('🔒 Screen locked - device will not sleep');
-          
-          wakeLock.addEventListener('release', () => {
-            console.log('Wake lock released - device can sleep again');
-            updateWakeLockStatus('🔓 Screen lock released');
-          });
-        } catch (err) {
-          console.log('Wake lock failed:', err);
-          updateWakeLockStatus('❌ Wake lock failed: ' + err.message);
-        }
-      } else {
-        console.log('Wake Lock API not supported');
-        updateWakeLockStatus('⚠️ Wake Lock API not supported');
-      }
-    }
-    
-    // Release wake lock
-    function releaseWakeLock() {
-      if (wakeLock) {
-        wakeLock.release();
-        wakeLock = null;
-        console.log('Wake lock released');
-        updateWakeLockStatus('🔓 Screen lock released');
-      }
-    }
-    
-    // Update wake lock status display
-    function updateWakeLockStatus(message) {
-      const statusEl = document.getElementById('wakeLockStatus');
-      if (statusEl) {
-        statusEl.textContent = message;
-      }
-    }
     
     // Cancel all active beep sequences
     function cancelAllBeepSequences() {
@@ -473,10 +432,6 @@
       // Add to active tasks
       activeTasks.push(taskData);
       
-      // Request wake lock when first task is added
-      if (activeTasks.length === 1) {
-        requestWakeLock();
-      }
       
       // Update immediately
       updateTaskTimer();
@@ -505,10 +460,6 @@
       // Check if we need to restart beep sequence for the new longest task
       checkAndRestartBeepSequence();
       
-      // Release wake lock if no tasks remain
-      if (activeTasks.length === 0) {
-        releaseWakeLock();
-      }
       
       taskDiv.remove();
     }
@@ -591,10 +542,6 @@
             // Check if we need to restart beep sequence for the new longest task
             checkAndRestartBeepSequence();
             
-            // Release wake lock if no tasks remain
-            if (activeTasks.length === 0) {
-              releaseWakeLock();
-            }
           }
         });
       }, 100); // Check every 100ms for more reliable background operation
