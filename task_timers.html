@@ -119,6 +119,9 @@
     
     // Track all active tasks and find the longest one
     const activeTasks = [];
+    let audioContext = null;
+    let audioInitialized = false;
+    let activeBeepTimeouts = []; // Track active beep timeouts to cancel them
     
     function updateLongestTask() {
       if (activeTasks.length === 0) return;
@@ -126,6 +129,14 @@
       // Find the task with the longest remaining time
       let longest = null;
       let maxRemainingTime = 0;
+      let previousLongest = null;
+      
+      // Find the current longest task
+      activeTasks.forEach(task => {
+        if (task.isLongest) {
+          previousLongest = task;
+        }
+      });
       
       activeTasks.forEach(task => {
         const now = new Date();
@@ -142,12 +153,125 @@
       activeTasks.forEach(task => {
         task.isLongest = (task === longest);
       });
+      
+      // If the longest task changed, reset soundPlayed flags and check for beeps
+      if (longest && longest !== previousLongest) {
+        console.log('Longest task changed from', previousLongest ? 'previous task' : 'none', 'to new longest task');
+        
+        // Reset soundPlayed flag for all tasks so they can trigger beeps again if they become longest
+        activeTasks.forEach(task => {
+          task.soundPlayed = false;
+        });
+        
+        checkForBeepTrigger();
+      }
+    }
+    
+    // Initialize audio context for background playback
+    function initAudioContext() {
+      if (!audioInitialized) {
+        try {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          audioInitialized = true;
+          console.log('Audio context initialized for background playback');
+        } catch (e) {
+          console.log('Failed to initialize audio context:', e);
+        }
+      }
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('Audio context resumed for background playback');
+        });
+      }
+    }
+    
+    // Keep audio context active with silent sounds
+    function keepAudioContextActive() {
+      if (audioContext && audioContext.state === 'running') {
+        // Play a very short, silent sound to keep the context active
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(1, audioContext.currentTime); // Very low frequency
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime); // Very quiet
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.01);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.01);
+      }
+    }
+    
+    // Cancel all active beep sequences
+    function cancelAllBeepSequences() {
+      console.log('Canceling all active beep sequences');
+      activeBeepTimeouts.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      activeBeepTimeouts = [];
+    }
+    
+    // Check if we need to restart beep sequence for the new longest task
+    function checkAndRestartBeepSequence() {
+      if (activeTasks.length === 0) return;
+      
+      // Update which task is the longest
+      updateLongestTask();
+      
+      const now = new Date();
+      activeTasks.forEach(task => {
+        const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
+        const remainingTime = task.totalDuration - elapsedSeconds;
+        
+        // If this is the longest task, has ≤60 seconds remaining, and hasn't played beeps yet
+        if (remainingTime <= 60 && remainingTime > 0 && task.isLongest && !task.soundPlayed) {
+          console.log('Restarting beep sequence for new longest task with', remainingTime, 'seconds remaining');
+          playArithmeticProgressionBeeps(task);
+          task.soundPlayed = true;
+        }
+      });
+    }
+    
+    // Check if any task should trigger beeps (called when longest task changes)
+    function checkForBeepTrigger() {
+      if (activeTasks.length === 0) {
+        console.log('No active tasks to check for beeps');
+        return;
+      }
+      
+      console.log('Checking for beep trigger with', activeTasks.length, 'active tasks');
+      
+      const now = new Date();
+      activeTasks.forEach((task, index) => {
+        const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
+        const remainingTime = task.totalDuration - elapsedSeconds;
+        
+        console.log(`Task ${index}: remaining=${remainingTime}s, isLongest=${task.isLongest}, soundPlayed=${task.soundPlayed}`);
+        
+        // If this is the longest task, has ≤60 seconds remaining, and hasn't played beeps yet
+        if (remainingTime <= 60 && remainingTime > 0 && task.isLongest && !task.soundPlayed) {
+          console.log('Triggering beep sequence for longest task with', remainingTime, 'seconds remaining');
+          playArithmeticProgressionBeeps(task);
+          task.soundPlayed = true;
+        }
+      });
     }
 
     // Play alert sound when timer reaches 1 minute or less
     function playAlertSound() {
-      // Create a simple beep sound using Web Audio API
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      // Use the global audio context for background playback
+      if (!audioContext || audioContext.state !== 'running') {
+        initAudioContext();
+        if (!audioContext || audioContext.state !== 'running') {
+          console.log('Audio context not ready for beep');
+          return;
+        }
+      }
+      
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -162,6 +286,47 @@
       
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.5);
+    }
+    
+    // Play arithmetic progression of beeps (15 beeps synchronized with timer updates)
+    function playArithmeticProgressionBeeps(taskData) {
+      // Don't play beeps if there are no active tasks
+      if (activeTasks.length === 0) {
+        console.log('No active tasks, canceling beep sequence');
+        cancelAllBeepSequences();
+        return;
+      }
+      
+      // Cancel any existing beep sequences first
+      cancelAllBeepSequences();
+      
+      // Calculate the exact end time of the task
+      const taskEndTime = new Date(taskData.startTime.getTime() + taskData.totalDuration * 1000);
+      
+      // Beep times relative to task end (in seconds before end): 60, 52.5, 45.5, 39, 33, 27.5, 22.5, 18, 14, 10.5, 7.5, 5, 3, 1.5, 0.5
+      const beepTimesBeforeEnd = [60, 52.5, 45.5, 39, 33, 27.5, 22.5, 18, 14, 10.5, 7.5, 5, 3, 1.5, 0.5];
+      
+      // First beep immediately
+      playAlertSound();
+      
+      // Schedule remaining beeps at exact times relative to task end
+      beepTimesBeforeEnd.forEach((secondsBeforeEnd, index) => {
+        const beepTime = new Date(taskEndTime.getTime() - secondsBeforeEnd * 1000);
+        const now = new Date();
+        const delay = beepTime.getTime() - now.getTime();
+        
+        if (delay > 0) {
+          const timeoutId = setTimeout(() => {
+            // Check again before playing each beep to ensure tasks still exist
+            if (activeTasks.length > 0) {
+              playAlertSound();
+            }
+          }, delay);
+          
+          // Track this timeout so it can be canceled
+          activeBeepTimeouts.push(timeoutId);
+        }
+      });
     }
 
     // Update current clock (HH:MM)
@@ -194,8 +359,17 @@
     function createTask() {
       const taskName = taskInput.value.trim();
       if (!taskName) return;
+      
+      // Cancel any active beep sequences when adding a new task
+      cancelAllBeepSequences();
+      
       addTask(taskName, 300); // 5 minutes default
       taskInput.value = "";
+      
+      // Check if the new task or any existing task should trigger beeps
+      setTimeout(() => {
+        checkForBeepTrigger();
+      }, 100); // Small delay to ensure the task is fully added
     }
 
     function addTask(name, duration) {
@@ -233,12 +407,8 @@
           // Update which task is the longest
           updateLongestTask();
           
-          // Play sound only if this is the longest task and reaches 1 minute or less
-          if (remainingTime <= 60 && !soundPlayed && taskData.isLongest) {
-            playAlertSound();
-            soundPlayed = true;
-            taskData.soundPlayed = true;
-          }
+          // Note: Beep logic is now handled by the background timer system
+          // This individual timer is mainly for display updates
         } else {
           clearInterval(interval);
           // Remove from active tasks
@@ -279,10 +449,105 @@
 
     function completeTask(taskDiv, interval) {
       clearInterval(interval);
+      
+      // Remove from active tasks
+      const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
+      if (taskIndex !== -1) {
+        activeTasks.splice(taskIndex, 1);
+      }
+      
+      // Check if we need to restart beep sequence for the new longest task
+      checkAndRestartBeepSequence();
+      
       taskDiv.remove();
     }
 
+    // Initialize audio context on any user interaction
+    document.addEventListener('click', initAudioContext);
+    document.addEventListener('keydown', initAudioContext);
+    document.addEventListener('touchstart', initAudioContext);
+    document.addEventListener('mousedown', initAudioContext);
+    
+    // Keep audio context active every 5 seconds
+    setInterval(keepAudioContextActive, 5000);
+    
+    // Keep timers running in background by using a more aggressive approach
+    let backgroundTimerInterval = null;
+    
+    function startBackgroundTimer() {
+      if (backgroundTimerInterval) return;
+      
+      // Use a more frequent interval to ensure timers keep running
+      backgroundTimerInterval = setInterval(() => {
+        // Force update all active tasks
+        activeTasks.forEach(task => {
+          const now = new Date();
+          const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
+          const remainingTime = task.totalDuration - elapsedSeconds;
+          
+          if (remainingTime > 0) {
+            // Update the timer display
+            const timerEl = task.taskDiv.querySelector('.task-timer');
+            if (timerEl) {
+              timerEl.textContent = formatTime(remainingTime);
+            }
+            
+            // Update which task is the longest
+            updateLongestTask();
+            
+            // Check if this is the longest task and should trigger beeps
+            if (remainingTime <= 60 && !task.soundPlayed && task.isLongest) {
+              console.log('Background timer triggered beep sequence');
+              playArithmeticProgressionBeeps(task);
+              task.soundPlayed = true;
+            }
+          } else {
+            // Task finished, remove it
+            const taskIndex = activeTasks.findIndex(t => t === task);
+            if (taskIndex !== -1) {
+              activeTasks.splice(taskIndex, 1);
+            }
+            task.taskDiv.remove();
+            
+            // Check if we need to restart beep sequence for the new longest task
+            checkAndRestartBeepSequence();
+          }
+        });
+      }, 100); // Check every 100ms for more reliable background operation
+    }
+    
+    function stopBackgroundTimer() {
+      if (backgroundTimerInterval) {
+        clearInterval(backgroundTimerInterval);
+        backgroundTimerInterval = null;
+      }
+    }
+    
+    // Try to initialize audio context on page load
+    window.addEventListener('load', () => {
+      console.log('Page loaded, attempting to initialize audio for background playback');
+      try {
+        initAudioContext();
+      } catch (e) {
+        console.log('Could not initialize audio on page load:', e);
+      }
+      
+      // Start the background timer system
+      startBackgroundTimer();
+    });
+    
+    // Handle visibility changes to ensure timers keep running
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        console.log('Tab hidden - background timers should continue running');
+      } else {
+        console.log('Tab visible - timers continue running');
+      }
+    });
+
     // Add default first task (3 minutes)
+    addTask("create first task", 70);
+    addTask("create first task", 20);
     addTask("create first task", 180);
   </script>
 </body>
