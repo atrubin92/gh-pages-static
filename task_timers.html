@@ -156,7 +156,6 @@
       
       // If the longest task changed, reset soundPlayed flags and check for beeps
       if (longest && longest !== previousLongest) {
-        console.log('Longest task changed from', previousLongest ? 'previous task' : 'none', 'to new longest task');
         
         // Reset soundPlayed flag for all tasks so they can trigger beeps again if they become longest
         activeTasks.forEach(task => {
@@ -173,14 +172,11 @@
         try {
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
           audioInitialized = true;
-          console.log('Audio context initialized for background playback');
         } catch (e) {
-          console.log('Failed to initialize audio context:', e);
         }
       }
       if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume().then(() => {
-          console.log('Audio context resumed for background playback');
         });
       }
     }
@@ -188,7 +184,6 @@
     
     // Cancel all active beep sequences
     function cancelAllBeepSequences() {
-      console.log('Canceling all active beep sequences');
       activeBeepTimeouts.forEach(timeoutId => {
         clearTimeout(timeoutId);
       });
@@ -216,7 +211,6 @@
         
         // If this is the longest task, has ≤60 seconds remaining, and hasn't played beeps yet
         if (remainingTime <= 60 && remainingTime > 0 && task.isLongest && !task.soundPlayed) {
-          console.log('Restarting beep sequence for new longest task with', remainingTime, 'seconds remaining');
           playArithmeticProgressionBeeps(task);
           task.soundPlayed = true;
         }
@@ -226,22 +220,18 @@
     // Check if any task should trigger beeps (called when longest task changes)
     function checkForBeepTrigger() {
       if (activeTasks.length === 0) {
-        console.log('No active tasks to check for beeps');
         return;
       }
       
-      console.log('Checking for beep trigger with', activeTasks.length, 'active tasks');
       
       const now = new Date();
       activeTasks.forEach((task, index) => {
         const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
         const remainingTime = task.totalDuration - elapsedSeconds;
         
-        console.log(`Task ${index}: remaining=${remainingTime}s, isLongest=${task.isLongest}, soundPlayed=${task.soundPlayed}`);
         
         // If this is the longest task, has ≤60 seconds remaining, and hasn't played beeps yet
         if (remainingTime <= 60 && remainingTime > 0 && task.isLongest && !task.soundPlayed) {
-          console.log('Triggering beep sequence for longest task with', remainingTime, 'seconds remaining');
           playArithmeticProgressionBeeps(task);
           task.soundPlayed = true;
         }
@@ -254,7 +244,6 @@
       if (!audioContext || audioContext.state !== 'running') {
         initAudioContext();
         if (!audioContext || audioContext.state !== 'running') {
-          console.log('Audio context not ready for beep');
           return;
         }
       }
@@ -281,7 +270,6 @@
       if (!audioContext || audioContext.state !== 'running') {
         initAudioContext();
         if (!audioContext || audioContext.state !== 'running') {
-          console.log('Audio context not ready for tick');
           return;
         }
       }
@@ -306,7 +294,6 @@
     function playArithmeticProgressionBeeps(taskData) {
       // Don't play beeps if there are no active tasks
       if (activeTasks.length === 0) {
-        console.log('No active tasks, canceling beep sequence');
         cancelAllBeepSequences();
         return;
       }
@@ -325,7 +312,6 @@
       playAlertSound();
       taskData.beepIndex = 1;
       
-      console.log('Beep sequence started for task, will be handled by background timer');
     }
 
     // Update current clock (HH:MM)
@@ -498,7 +484,6 @@
             
             // Check if this is the longest task and should trigger beeps
             if (remainingTime <= 60 && !task.soundPlayed && task.isLongest) {
-              console.log('Background timer triggered beep sequence');
               playArithmeticProgressionBeeps(task);
               task.soundPlayed = true;
             }
@@ -514,7 +499,6 @@
                 
                 // If we're at or past the next beep time, play the beep
                 if (secondsBeforeEnd <= nextBeepTime) {
-                  console.log(`Playing beep ${task.beepIndex + 1} at ${secondsBeforeEnd.toFixed(1)}s before end`);
                   playAlertSound();
                   task.beepIndex++;
                 }
@@ -527,7 +511,6 @@
               const currentSecond = Math.floor(remainingTime);
               if (!task.lastTickSecond || task.lastTickSecond !== currentSecond) {
                 task.lastTickSecond = currentSecond;
-                console.log(`Playing tick at ${remainingTime.toFixed(1)}s remaining`);
                 playTickSound();
               }
             }
@@ -547,34 +530,18 @@
       }, 100); // Check every 100ms for more reliable background operation
     }
     
-    function stopBackgroundTimer() {
-      if (backgroundTimerInterval) {
-        clearInterval(backgroundTimerInterval);
-        backgroundTimerInterval = null;
-      }
-    }
     
     // Try to initialize audio context on page load
     window.addEventListener('load', () => {
-      console.log('Page loaded, attempting to initialize audio for background playback');
       try {
         initAudioContext();
       } catch (e) {
-        console.log('Could not initialize audio on page load:', e);
       }
       
       // Start the background timer system
       startBackgroundTimer();
     });
     
-    // Handle visibility changes to ensure timers keep running
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        console.log('Tab hidden - background timers should continue running');
-      } else {
-        console.log('Tab visible - timers continue running');
-      }
-    });
 
     // Add default first task (3 minutes)
     addTask("create first task", 70);
