@@ -98,7 +98,6 @@
   </style>
 </head>
 <body>
-
   <form id="taskForm">
     <textarea id="taskInput" placeholder="New task" required></textarea>
     <div class="form-footer">
@@ -120,27 +119,18 @@
     const activeTasks = [];
     let audioContext = null;
     let audioInitialized = false;
-    let activeBeepTimeouts = [];
 
-    function updateLongestTask() {
-      if (activeTasks.length === 0) return;
+    function updateLongestTask(now) {
+      if (activeTasks.length === 0) return { longest: null, changed: false };
 
       let longest = null;
-      let maxRemainingTime = 0;
-      let previousLongest = null;
+      let maxRemainingTime = -Infinity;
+      let previousLongest = activeTasks.find(t => t.isLongest) || null;
 
       activeTasks.forEach(task => {
-        if (task.isLongest) {
-          previousLongest = task;
-        }
-      });
-
-      activeTasks.forEach(task => {
-        const now = new Date();
         const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
         const remainingTime = task.totalDuration - elapsedSeconds;
-
-        if (remainingTime > maxRemainingTime && remainingTime > 0) {
+        if (remainingTime > 0 && remainingTime > maxRemainingTime) {
           maxRemainingTime = remainingTime;
           longest = task;
         }
@@ -150,14 +140,7 @@
         task.isLongest = (task === longest);
       });
 
-      if (longest && longest !== previousLongest) {
-
-        activeTasks.forEach(task => {
-          task.soundPlayed = false;
-        });
-
-        checkForBeepTrigger();
-      }
+      return { longest, changed: longest !== previousLongest };
     }
 
     function initAudioContext() {
@@ -175,51 +158,14 @@
     }
 
     function cancelAllBeepSequences() {
-      activeBeepTimeouts.forEach(timeoutId => {
-        clearTimeout(timeoutId);
-      });
-      activeBeepTimeouts = [];
-
       activeTasks.forEach(task => {
         task.beepSequenceStarted = false;
         task.beepIndex = 0;
         task.beepTimesBeforeEnd = null;
+        task.soundPlayed = false;
       });
     }
 
-    function checkAndRestartBeepSequence() {
-      if (activeTasks.length === 0) return;
-
-      updateLongestTask();
-
-      const now = new Date();
-      activeTasks.forEach(task => {
-        const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
-        const remainingTime = task.totalDuration - elapsedSeconds;
-
-        if (remainingTime <= 60 && remainingTime > 0 && task.isLongest && !task.soundPlayed) {
-          playArithmeticProgressionBeeps(task);
-          task.soundPlayed = true;
-        }
-      });
-    }
-
-    function checkForBeepTrigger() {
-      if (activeTasks.length === 0) {
-        return;
-      }
-
-      const now = new Date();
-      activeTasks.forEach((task, index) => {
-        const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
-        const remainingTime = task.totalDuration - elapsedSeconds;
-
-        if (remainingTime <= 60 && remainingTime > 0 && task.isLongest && !task.soundPlayed) {
-          playArithmeticProgressionBeeps(task);
-          task.soundPlayed = true;
-        }
-      });
-    }
 
     function playAlertSound() {
 
@@ -323,10 +269,6 @@
 
       addTask(taskName, 300);
       taskInput.value = "";
-
-      setTimeout(() => {
-        checkForBeepTrigger();
-      }, 100);
     }
 
     function addTask(name, duration) {
@@ -342,72 +284,47 @@
 
       const startTime = new Date();
       const totalDuration = duration;
-      let soundPlayed = false;
 
       const completeBtn = document.createElement("button");
       completeBtn.className = "complete-btn";
-      completeBtn.onclick = () => completeTask(taskDiv, interval);
 
       taskDiv.appendChild(nameEl);
       taskDiv.appendChild(timerEl);
       taskDiv.appendChild(completeBtn);
       tasksEl.appendChild(taskDiv);
 
-      function updateTaskTimer() {
-        const now = new Date();
-        const elapsedSeconds = Math.floor((now - startTime) / 1000);
-        const remainingTime = totalDuration - elapsedSeconds;
-
-        if (remainingTime > 0) {
-          timerEl.textContent = formatTime(remainingTime);
-
-          updateLongestTask();
-
-        } else {
-          clearInterval(interval);
-
-          const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
-          if (taskIndex !== -1) {
-            activeTasks.splice(taskIndex, 1);
-          }
-          taskDiv.remove();
-        }
-      }
-
       const taskData = {
         taskDiv: taskDiv,
+        timerEl: timerEl,
         startTime: startTime,
         totalDuration: totalDuration,
         soundPlayed: false,
         isLongest: false,
-        lastTickSecond: null
+        lastTickSecond: null,
+        lastDisplaySecond: null,
+        beepSequenceStarted: false,
+        beepIndex: 0,
+        beepTimesBeforeEnd: null
       };
 
       activeTasks.push(taskData);
 
-      updateTaskTimer();
-
-      const interval = setInterval(updateTaskTimer, 1000);
+      timerEl.textContent = formatTime(totalDuration);
 
       completeBtn.onclick = () => {
         const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
         if (taskIndex !== -1) {
           activeTasks.splice(taskIndex, 1);
         }
-        completeTask(taskDiv, interval);
+        completeTask(taskDiv);
       };
     }
 
-    function completeTask(taskDiv, interval) {
-      clearInterval(interval);
-
+    function completeTask(taskDiv) {
       const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
       if (taskIndex !== -1) {
         activeTasks.splice(taskIndex, 1);
       }
-
-      checkAndRestartBeepSequence();
-
       taskDiv.remove();
     }
 
@@ -422,22 +339,26 @@
       if (backgroundTimerInterval) return;
 
       backgroundTimerInterval = setInterval(() => {
+        const now = new Date();
 
-        activeTasks.forEach(task => {
-          const now = new Date();
+        const { changed } = updateLongestTask(now);
+        if (changed) {
+          cancelAllBeepSequences();
+        }
+
+        [...activeTasks].forEach(task => {
           const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
           const remainingTime = task.totalDuration - elapsedSeconds;
 
           if (remainingTime > 0) {
+            const currentSecond = Math.floor(remainingTime);
 
-            const timerEl = task.taskDiv.querySelector('.task-timer');
-            if (timerEl) {
-              timerEl.textContent = formatTime(remainingTime);
+            if (task.lastDisplaySecond !== currentSecond && task.timerEl) {
+              task.timerEl.textContent = formatTime(remainingTime);
+              task.lastDisplaySecond = currentSecond;
             }
 
-            updateLongestTask();
-
-            if (remainingTime <= 60 && !task.soundPlayed && task.isLongest) {
+            if (remainingTime <= 60 && task.isLongest && !task.soundPlayed) {
               playArithmeticProgressionBeeps(task);
               task.soundPlayed = true;
             }
@@ -445,10 +366,8 @@
             if (task.beepSequenceStarted && task.isLongest) {
               const taskEndTime = new Date(task.startTime.getTime() + task.totalDuration * 1000);
               const secondsBeforeEnd = (taskEndTime.getTime() - now.getTime()) / 1000;
-
               if (task.beepIndex < task.beepTimesBeforeEnd.length) {
                 const nextBeepTime = task.beepTimesBeforeEnd[task.beepIndex];
-
                 if (secondsBeforeEnd <= nextBeepTime) {
                   playAlertSound();
                   task.beepIndex++;
@@ -456,24 +375,16 @@
               }
             }
 
-            if (remainingTime > 0 && task.isLongest) {
-
-              const currentSecond = Math.floor(remainingTime);
-              if (!task.lastTickSecond || task.lastTickSecond !== currentSecond) {
+            if (task.isLongest) {
+              if (task.lastTickSecond !== currentSecond) {
                 task.lastTickSecond = currentSecond;
                 playTickSound();
               }
             }
           } else {
-
-            const taskIndex = activeTasks.findIndex(t => t === task);
-            if (taskIndex !== -1) {
-              activeTasks.splice(taskIndex, 1);
-            }
+            const idx = activeTasks.findIndex(t => t === task);
+            if (idx !== -1) activeTasks.splice(idx, 1);
             task.taskDiv.remove();
-
-            checkAndRestartBeepSequence();
-
           }
         });
       }, 100);
