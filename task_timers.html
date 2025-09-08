@@ -317,6 +317,10 @@
     function startBackgroundTimer() {
       if (backgroundTimerInterval) return;
 
+      setInterval(() => {
+        playTickSound();
+      }, 1_000);
+
       backgroundTimerInterval = setInterval(() => {
         const now = new Date();
 
@@ -324,8 +328,6 @@
         if (changed) {
           cancelAllBeepSequences();
         }
-
-        playTickSound();
 
         [...activeTasks].forEach(task => {
           const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
