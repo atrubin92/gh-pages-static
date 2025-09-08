@@ -179,7 +179,6 @@
       const now = audioContext.currentTime;
       oscillator.frequency.setValueAtTime(freq, now);
       gainNode.gain.setValueAtTime(gainStart, now);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
       oscillator.start(now);
       oscillator.stop(now + duration);
     }
@@ -189,7 +188,7 @@
     }
 
     function playTickSound() {
-      playTone({ freq: 400, duration: 0.001, gainStart: 0.01});
+      playTone({ freq: 400, duration: 0.001, gainStart: 0.0001});
     }
 
     function playArithmeticProgressionBeeps(taskData) {
