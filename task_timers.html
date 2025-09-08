@@ -166,55 +166,31 @@
       });
     }
 
-
-    function playAlertSound() {
-
+    function playTone({ freq, duration, gainStart}) {
       if (!audioContext || audioContext.state !== 'running') {
         initAudioContext();
-        if (!audioContext || audioContext.state !== 'running') {
-          return;
-        }
+        if (!audioContext || audioContext.state !== 'running') return;
       }
 
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
       oscillator.type = 'sine';
+      const now = audioContext.currentTime;
+      oscillator.frequency.setValueAtTime(freq, now);
+      gainNode.gain.setValueAtTime(gainStart, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+      oscillator.start(now);
+      oscillator.stop(now + duration);
+    }
 
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
+    function playAlertSound() {
+      playTone({ freq: 800, duration: 0.5, gainStart: 0.3});
     }
 
     function playTickSound() {
-
-      if (!audioContext || audioContext.state !== 'running') {
-        initAudioContext();
-        if (!audioContext || audioContext.state !== 'running') {
-          return;
-        }
-      }
-
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-      oscillator.type = 'sine';
-
-      gainNode.gain.setValueAtTime(0.01, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.001);
+      playTone({ freq: 400, duration: 0.001, gainStart: 0.01});
     }
 
     function playArithmeticProgressionBeeps(taskData) {
