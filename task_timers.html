@@ -194,7 +194,7 @@
 
     function playTickSound() {
       playTone({ 
-        freq: 10, duration: 0.1,
+        freq: 400, duration: 0.2,
         volumeStart: 0.0001, volumeMiddle: 0.001, volumeEnd: 0.0001
       });
     }
@@ -319,7 +319,7 @@
 
       setInterval(() => {
         playTickSound();
-      }, 1_000);
+      }, 5_000);
 
       backgroundTimerInterval = setInterval(() => {
         const now = new Date();
