@@ -120,26 +120,26 @@
     let audioInitialized = false;
 
     function updateLongestTask(now) {
-      if (activeTasks.length === 0) return { longest: null, changed: false };
+      if (activeTasks.length === 0) return false;
 
-      let longest = null;
+      let currentLongestTask = null;
       let maxRemainingTime = -Infinity;
-      let previousLongest = activeTasks.find(t => t.isLongest) || null;
+      let previousLongestTask = activeTasks.find(taskItem => taskItem.isLongest) || null;
 
-      activeTasks.forEach(task => {
-        const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
-        const remainingTime = task.totalDuration - elapsedSeconds;
+      activeTasks.forEach(taskItem => {
+        const elapsedSeconds = Math.floor((now - taskItem.startTime) / 1000);
+        const remainingTime = taskItem.totalDuration - elapsedSeconds;
         if (remainingTime > 0 && remainingTime > maxRemainingTime) {
           maxRemainingTime = remainingTime;
-          longest = task;
+          currentLongestTask = taskItem;
         }
       });
 
-      activeTasks.forEach(task => {
-        task.isLongest = (task === longest);
+      activeTasks.forEach(taskItem => {
+        taskItem.isLongest = (taskItem === currentLongestTask);
       });
 
-      return { longest, changed: longest !== previousLongest };
+      return currentLongestTask !== previousLongestTask;
     }
 
     function initAudioContext() {
@@ -313,7 +313,7 @@
       backgroundTimerInterval = setInterval(() => {
         const now = new Date();
 
-        const { changed } = updateLongestTask(now);
+        const changed = updateLongestTask(now);
         if (changed) {
           cancelAllBeepSequences();
         }
