@@ -109,7 +109,6 @@
   <div id="tasks"></div>
 
   <script>
-
     function formatTime(seconds) {
       const m = String(Math.floor(seconds / 60)).padStart(2, "0");
       const s = String(seconds % 60).padStart(2, "0");
@@ -194,7 +193,6 @@
     }
 
     function playArithmeticProgressionBeeps(taskData) {
-
       if (activeTasks.length === 0) {
         cancelAllBeepSequences();
         return;
@@ -209,7 +207,6 @@
 
       playAlertSound();
       taskData.beepIndex = 1;
-
     }
 
     function updateClock() {
@@ -276,7 +273,6 @@
         totalDuration: totalDuration,
         soundPlayed: false,
         isLongest: false,
-        lastTickSecond: null,
         lastDisplaySecond: null,
         beepSequenceStarted: false,
         beepIndex: 0,
@@ -322,6 +318,8 @@
           cancelAllBeepSequences();
         }
 
+        playTickSound();
+
         [...activeTasks].forEach(task => {
           const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
           const remainingTime = task.totalDuration - elapsedSeconds;
@@ -348,13 +346,6 @@
                   playAlertSound();
                   task.beepIndex++;
                 }
-              }
-            }
-
-            if (task.isLongest) {
-              if (task.lastTickSecond !== currentSecond) {
-                task.lastTickSecond = currentSecond;
-                playTickSound();
               }
             }
           } else {
