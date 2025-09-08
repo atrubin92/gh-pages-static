@@ -165,7 +165,7 @@
       });
     }
 
-    function playTone({ freq, duration, gainStart}) {
+    function playTone({ freq, duration, volumeStart, volumeMiddle, volumeEnd}) {
       if (!audioContext || audioContext.state !== 'running') {
         initAudioContext();
         if (!audioContext || audioContext.state !== 'running') return;
@@ -178,17 +178,25 @@
       oscillator.type = 'sine';
       const now = audioContext.currentTime;
       oscillator.frequency.setValueAtTime(freq, now);
-      gainNode.gain.setValueAtTime(gainStart, now);
+      gainNode.gain.setValueAtTime(volumeStart, now);
+      gainNode.gain.exponentialRampToValueAtTime(volumeMiddle, now + duration/2);
+      gainNode.gain.exponentialRampToValueAtTime(volumeEnd, now + duration);
       oscillator.start(now);
       oscillator.stop(now + duration);
     }
 
     function playAlertSound() {
-      playTone({ freq: 800, duration: 0.5, gainStart: 0.3});
+      playTone({ 
+        freq: 800, duration: 0.5,
+        volumeStart: 0.3, volumeMiddle: 0.3, volumeEnd: 0.3
+      });
     }
 
     function playTickSound() {
-      playTone({ freq: 400, duration: 0.001, gainStart: 0.0001});
+      playTone({ 
+        freq: 400, duration: 0.01,
+        volumeStart: 0.0001, volumeMiddle: 0.001, volumeEnd: 0.0001
+      });
     }
 
     function playArithmeticProgressionBeeps(taskData) {
