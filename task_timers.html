@@ -297,7 +297,7 @@
         if (taskIndex !== -1) {
           activeTasks.splice(taskIndex, 1);
         }
-        completeTask(taskDiv);
+        taskDiv.remove();
       };
     }
 
@@ -331,7 +331,9 @@
           cancelAllBeepSequences();
         }
 
-        [...activeTasks].forEach(task => {
+        // Process tasks in reverse order to safely remove items
+        for (let i = activeTasks.length - 1; i >= 0; i--) {
+          const task = activeTasks[i];
           const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
           const remainingTime = task.totalDuration - elapsedSeconds;
 
@@ -360,11 +362,10 @@
               }
             }
           } else {
-            const idx = activeTasks.findIndex(t => t === task);
-            if (idx !== -1) activeTasks.splice(idx, 1);
+            activeTasks.splice(i, 1);
             task.taskDiv.remove();
           }
-        });
+        }
       }, 100);
     }
 
