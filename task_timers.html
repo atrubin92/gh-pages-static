@@ -1,380 +1,395 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Task Timers</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 30px;
-      font-size: 20px;
-    }
-    #tasks {
-      margin-top: 20px;
-      width: 100%;
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-    textarea {
-      resize: vertical;
-      width: 100%;
-      min-height: 100px;
-      max-height: 400px;
-      padding: 10px;
-      font-size: 27px;
-      margin-bottom: 10px;
-      line-height: 1.4;
-      box-sizing: border-box;
-    }
-    .form-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    button {
-      width: 150px;
-      padding: 10px;
-      font-size: 27px;
-      cursor: pointer;
-    }
-    #currentTime {
-      font-weight: bold;
-      font-size: 33px;
-      text-align: right;
-      width: 80px;
-      margin-right: 20px;
-    }
-    .task {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f1f1f1;
-      padding: 12px 15px;
-      margin-bottom: 12px;
-      border-radius: 6px;
-      gap: 10px;
-      font-size: 27px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .task-text {
-      flex: 1;
-      word-break: break-word;
-      white-space: pre-wrap;
-      line-height: 1.4;
-    }
-    .task-timer {
-      flex-shrink: 0;
-      font-weight: bold;
-      text-align: right;
-      width: 80px;
-    }
-    .complete-btn {
-      background: #44aa44;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 6px;
-      font-size: 24px;
-      cursor: pointer;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 42px;
-      height: 42px;
-    }
-    .complete-btn:hover {
-      background: #339933;
-    }
-    .complete-btn::before {
-      content: "✓";
-      font-weight: bold;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Task Timers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            font-size: 20px;
+        }
+
+        #tasks {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            resize: vertical;
+            width: 100%;
+            min-height: 100px;
+            max-height: 400px;
+            padding: 10px;
+            font-size: 27px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            box-sizing: border-box;
+        }
+
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            width: 150px;
+            padding: 10px;
+            font-size: 27px;
+            cursor: pointer;
+        }
+
+        #currentTime {
+            font-weight: bold;
+            font-size: 33px;
+            text-align: right;
+            width: 80px;
+            margin-right: 20px;
+        }
+
+        .task {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f1f1f1;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            gap: 10px;
+            font-size: 27px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .task-text {
+            flex: 1;
+            word-break: break-word;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .task-timer {
+            flex-shrink: 0;
+            font-weight: bold;
+            text-align: right;
+            width: 80px;
+        }
+
+        .complete-btn {
+            background: #44aa44;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px;
+            font-size: 24px;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+        }
+
+        .complete-btn:hover {
+            background: #339933;
+        }
+
+        .complete-btn::before {
+            content: "✓";
+            font-weight: bold;
+        }
+    </style>
 </head>
+
 <body>
-  <form id="taskForm">
-    <textarea id="taskInput" placeholder="New task" required></textarea>
-    <div class="form-footer">
-      <button type="submit">Add Task</button>
-      <div id="currentTime">00:00</div>
-    </div>
-  </form>
+    <form id="taskForm">
+        <textarea id="taskInput" placeholder="New task" required></textarea>
+        <div class="form-footer">
+            <button type="submit">Add Task</button>
+            <div id="currentTime">00:00</div>
+        </div>
+    </form>
 
-  <div id="tasks"></div>
+    <div id="tasks"></div>
 
-  <script>
-    function formatTime(seconds) {
-      const m = String(Math.floor(seconds / 60)).padStart(2, "0");
-      const s = String(seconds % 60).padStart(2, "0");
-      return `${m}:${s}`;
-    }
-
-    const activeTasks = [];
-    let audioContext = null;
-    let audioInitialized = false;
-
-    function updateLongestTask(now) {
-      if (activeTasks.length === 0) return false;
-
-      let currentLongestTask = null;
-      let maxRemainingTime = -Infinity;
-      let previousLongestTask = activeTasks.find(taskItem => taskItem.isLongest) || null;
-
-      activeTasks.forEach(taskItem => {
-        const elapsedSeconds = Math.floor((now - taskItem.startTime) / 1000);
-        const remainingTime = taskItem.totalDuration - elapsedSeconds;
-        if (remainingTime > 0 && remainingTime > maxRemainingTime) {
-          maxRemainingTime = remainingTime;
-          currentLongestTask = taskItem;
-        }
-      });
-
-      activeTasks.forEach(taskItem => {
-        taskItem.isLongest = (taskItem === currentLongestTask);
-      });
-
-      return currentLongestTask !== previousLongestTask;
-    }
-
-    function initAudioContext() {
-      if (!audioInitialized) {
-        try {
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          audioInitialized = true;
-        } catch (e) {
-        }
-      }
-      if (audioContext && audioContext.state === 'suspended') {
-        audioContext.resume().then(() => {
-        });
-      }
-    }
-
-    function cancelAllBeepSequences() {
-      activeTasks.forEach(task => {
-        task.beepSequenceStarted = false;
-        task.beepIndex = 0;
-        task.beepTimesBeforeEnd = null;
-        task.soundPlayed = false;
-      });
-    }
-
-    function playTone({ freq, duration, volumeStart, volumeMiddle, volumeEnd}) {
-      if (!audioContext || audioContext.state !== 'running') {
-        initAudioContext();
-        if (!audioContext || audioContext.state !== 'running') return;
-      }
-
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      oscillator.type = 'sine';
-      const now = audioContext.currentTime;
-      oscillator.frequency.setValueAtTime(freq, now);
-      gainNode.gain.setValueAtTime(volumeStart, now);
-      gainNode.gain.exponentialRampToValueAtTime(volumeMiddle, now + duration/2);
-      gainNode.gain.exponentialRampToValueAtTime(volumeEnd, now + duration);
-      oscillator.start(now);
-      oscillator.stop(now + duration);
-    }
-
-    function playAlertSound() {
-      playTone({ 
-        freq: 800, duration: 0.5,
-        volumeStart: 0.3, volumeMiddle: 0.3, volumeEnd: 0.3
-      });
-    }
-
-    function playTickSound() {
-      playTone({ 
-        freq: 400, duration: 0.2,
-        volumeStart: 0.0001, volumeMiddle: 0.001, volumeEnd: 0.0001
-      });
-    }
-
-    function playArithmeticProgressionBeeps(taskData) {
-      if (activeTasks.length === 0) {
-        cancelAllBeepSequences();
-        return;
-      }
-
-      cancelAllBeepSequences();
-
-      taskData.beepSequenceStarted = true;
-      taskData.beepIndex = 0;
-
-      taskData.beepTimesBeforeEnd = [60, 52.5, 45.5, 39, 33, 27.5, 22.5, 18, 14, 10.5, 7.5, 5, 3, 1.5, 0.5];
-
-      playAlertSound();
-      taskData.beepIndex = 1;
-    }
-
-    const currentTimeEl = document.getElementById("currentTime");
-    
-    function updateClock() {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, "0");
-      const m = String(now.getMinutes()).padStart(2, "0");
-      currentTimeEl.textContent = `${h}:${m}`;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    const taskForm = document.getElementById("taskForm");
-    const taskInput = document.getElementById("taskInput");
-    const tasksEl = document.getElementById("tasks");
-
-    taskForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      createTask();
-    });
-
-    taskInput.addEventListener("keydown", (e) => {
-      if (e.ctrlKey && e.key === "Enter") {
-        e.preventDefault();
-        createTask();
-      }
-    });
-
-    function createTask() {
-      const taskName = taskInput.value.trim();
-      if (!taskName) return;
-
-      cancelAllBeepSequences();
-
-      addTask(taskName, 300);
-      taskInput.value = "";
-    }
-
-    function addTask(name, duration) {
-      const taskDiv = document.createElement("div");
-      taskDiv.className = "task";
-
-      const nameEl = document.createElement("div");
-      nameEl.className = "task-text";
-      nameEl.textContent = name;
-
-      const timerEl = document.createElement("div");
-      timerEl.className = "task-timer";
-
-      const startTime = new Date();
-      const totalDuration = duration;
-
-      const completeBtn = document.createElement("button");
-      completeBtn.className = "complete-btn";
-
-      taskDiv.appendChild(nameEl);
-      taskDiv.appendChild(timerEl);
-      taskDiv.appendChild(completeBtn);
-      tasksEl.appendChild(taskDiv);
-
-      const taskData = {
-        taskDiv: taskDiv,
-        timerEl: timerEl,
-        startTime: startTime,
-        totalDuration: totalDuration,
-        soundPlayed: false,
-        isLongest: false,
-        lastDisplaySecond: null,
-        beepSequenceStarted: false,
-        beepIndex: 0,
-        beepTimesBeforeEnd: null
-      };
-
-      activeTasks.push(taskData);
-
-      timerEl.textContent = formatTime(totalDuration);
-
-      completeBtn.onclick = () => {
-        const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
-        if (taskIndex !== -1) {
-          activeTasks.splice(taskIndex, 1);
-        }
-        taskDiv.remove();
-      };
-    }
-
-    function completeTask(taskDiv) {
-      const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
-      if (taskIndex !== -1) {
-        activeTasks.splice(taskIndex, 1);
-      }
-      taskDiv.remove();
-    }
-
-    document.addEventListener('click', initAudioContext);
-    document.addEventListener('keydown', initAudioContext);
-    document.addEventListener('touchstart', initAudioContext);
-    document.addEventListener('mousedown', initAudioContext);
-
-    let backgroundTimerInterval = null;
-
-    function startBackgroundTimer() {
-      if (backgroundTimerInterval) return;
-
-      setInterval(() => {
-        playTickSound();
-      }, 5_000);
-
-      backgroundTimerInterval = setInterval(() => {
-        const now = new Date();
-
-        const changed = updateLongestTask(now);
-        if (changed) {
-          cancelAllBeepSequences();
+    <script>
+        function formatTime(seconds) {
+            const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+            const s = String(seconds % 60).padStart(2, "0");
+            return `${m}:${s}`;
         }
 
-        // Process tasks in reverse order to safely remove items
-        for (let i = activeTasks.length - 1; i >= 0; i--) {
-          const task = activeTasks[i];
-          const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
-          const remainingTime = task.totalDuration - elapsedSeconds;
+        const activeTasks = [];
+        let audioContext = null;
+        let audioInitialized = false;
 
-          if (remainingTime > 0) {
-            const currentSecond = Math.floor(remainingTime);
+        function updateLongestTask(now) {
+            if (activeTasks.length === 0) return false;
 
-            if (task.lastDisplaySecond !== currentSecond && task.timerEl) {
-              task.timerEl.textContent = formatTime(remainingTime);
-              task.lastDisplaySecond = currentSecond;
-            }
+            let currentLongestTask = null;
+            let maxRemainingTime = -Infinity;
+            let previousLongestTask = activeTasks.find(taskItem => taskItem.isLongest) || null;
 
-            if (remainingTime <= 60 && task.isLongest && !task.soundPlayed) {
-              playArithmeticProgressionBeeps(task);
-              task.soundPlayed = true;
-            }
-
-            if (task.beepSequenceStarted && task.isLongest) {
-              const taskEndTime = new Date(task.startTime.getTime() + task.totalDuration * 1000);
-              const secondsBeforeEnd = (taskEndTime.getTime() - now.getTime()) / 1000;
-              if (task.beepIndex < task.beepTimesBeforeEnd.length) {
-                const nextBeepTime = task.beepTimesBeforeEnd[task.beepIndex];
-                if (secondsBeforeEnd <= nextBeepTime) {
-                  playAlertSound();
-                  task.beepIndex++;
+            activeTasks.forEach(taskItem => {
+                const elapsedSeconds = Math.floor((now - taskItem.startTime) / 1000);
+                const remainingTime = taskItem.totalDuration - elapsedSeconds;
+                if (remainingTime > 0 && remainingTime > maxRemainingTime) {
+                    maxRemainingTime = remainingTime;
+                    currentLongestTask = taskItem;
                 }
-              }
-            }
-          } else {
-            activeTasks.splice(i, 1);
-            task.taskDiv.remove();
-          }
+            });
+
+            activeTasks.forEach(taskItem => {
+                taskItem.isLongest = (taskItem === currentLongestTask);
+            });
+
+            return currentLongestTask !== previousLongestTask;
         }
-      }, 100);
-    }
 
-    window.addEventListener('load', () => {
-      initAudioContext();
-      startBackgroundTimer();
-    });
+        function initAudioContext() {
+            if (!audioInitialized) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    audioInitialized = true;
+                } catch (e) {
+                }
+            }
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                });
+            }
+        }
 
-    addTask("create first task", 180);
-  </script>
+        function cancelAllBeepSequences() {
+            activeTasks.forEach(task => {
+                task.beepSequenceStarted = false;
+                task.beepIndex = 0;
+                task.beepTimesBeforeEnd = null;
+                task.soundPlayed = false;
+            });
+        }
+
+        function playTone({ freq, duration, volumeStart, volumeMiddle, volumeEnd }) {
+            if (!audioContext || audioContext.state !== 'running') {
+                initAudioContext();
+                if (!audioContext || audioContext.state !== 'running') return;
+            }
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.type = 'sine';
+            const now = audioContext.currentTime;
+            oscillator.frequency.setValueAtTime(freq, now);
+            gainNode.gain.setValueAtTime(volumeStart, now);
+            gainNode.gain.exponentialRampToValueAtTime(volumeMiddle, now + duration / 2);
+            gainNode.gain.exponentialRampToValueAtTime(volumeEnd, now + duration);
+            oscillator.start(now);
+            oscillator.stop(now + duration);
+        }
+
+        function playAlertSound() {
+            playTone({
+                freq: 800, duration: 0.5,
+                volumeStart: 0.3, volumeMiddle: 0.3, volumeEnd: 0.3
+            });
+        }
+
+        function playTickSound() {
+            playTone({
+                freq: 400, duration: 0.2,
+                volumeStart: 0.0001, volumeMiddle: 0.001, volumeEnd: 0.0001
+            });
+        }
+
+        function playArithmeticProgressionBeeps(taskData) {
+            if (activeTasks.length === 0) {
+                cancelAllBeepSequences();
+                return;
+            }
+
+            cancelAllBeepSequences();
+
+            taskData.beepSequenceStarted = true;
+            taskData.beepIndex = 0;
+
+            taskData.beepTimesBeforeEnd = [60, 52.5, 45.5, 39, 33, 27.5, 22.5, 18, 14, 10.5, 7.5, 5, 3, 1.5, 0.5];
+
+            playAlertSound();
+            taskData.beepIndex = 1;
+        }
+
+        const currentTimeEl = document.getElementById("currentTime");
+
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, "0");
+            const m = String(now.getMinutes()).padStart(2, "0");
+            currentTimeEl.textContent = `${h}:${m}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        const taskForm = document.getElementById("taskForm");
+        const taskInput = document.getElementById("taskInput");
+        const tasksEl = document.getElementById("tasks");
+
+        taskForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            createTask();
+        });
+
+        taskInput.addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key === "Enter") {
+                e.preventDefault();
+                createTask();
+            }
+        });
+
+        function createTask() {
+            const taskName = taskInput.value.trim();
+            if (!taskName) return;
+
+            cancelAllBeepSequences();
+
+            addTask(taskName, 300);
+            taskInput.value = "";
+        }
+
+        function addTask(name, duration) {
+            const taskDiv = document.createElement("div");
+            taskDiv.className = "task";
+
+            const nameEl = document.createElement("div");
+            nameEl.className = "task-text";
+            nameEl.textContent = name;
+
+            const timerEl = document.createElement("div");
+            timerEl.className = "task-timer";
+
+            const startTime = new Date();
+            const totalDuration = duration;
+
+            const completeBtn = document.createElement("button");
+            completeBtn.className = "complete-btn";
+
+            taskDiv.appendChild(nameEl);
+            taskDiv.appendChild(timerEl);
+            taskDiv.appendChild(completeBtn);
+            tasksEl.appendChild(taskDiv);
+
+            const taskData = {
+                taskDiv: taskDiv,
+                timerEl: timerEl,
+                startTime: startTime,
+                totalDuration: totalDuration,
+                soundPlayed: false,
+                isLongest: false,
+                lastDisplaySecond: null,
+                beepSequenceStarted: false,
+                beepIndex: 0,
+                beepTimesBeforeEnd: null
+            };
+
+            activeTasks.push(taskData);
+
+            timerEl.textContent = formatTime(totalDuration);
+
+            completeBtn.onclick = () => {
+                const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
+                if (taskIndex !== -1) {
+                    activeTasks.splice(taskIndex, 1);
+                }
+                taskDiv.remove();
+            };
+        }
+
+        function completeTask(taskDiv) {
+            const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
+            if (taskIndex !== -1) {
+                activeTasks.splice(taskIndex, 1);
+            }
+            taskDiv.remove();
+        }
+
+        document.addEventListener('click', initAudioContext);
+        document.addEventListener('keydown', initAudioContext);
+        document.addEventListener('touchstart', initAudioContext);
+        document.addEventListener('mousedown', initAudioContext);
+
+        let backgroundTimerInterval = null;
+
+        function startBackgroundTimer() {
+            if (backgroundTimerInterval) return;
+
+            setInterval(() => {
+                playTickSound();
+            }, 5_000);
+
+            backgroundTimerInterval = setInterval(() => {
+                const now = new Date();
+
+                const changed = updateLongestTask(now);
+                if (changed) {
+                    cancelAllBeepSequences();
+                }
+
+                // Process tasks in reverse order to safely remove items
+                for (let i = activeTasks.length - 1; i >= 0; i--) {
+                    const task = activeTasks[i];
+                    const elapsedSeconds = Math.floor((now - task.startTime) / 1000);
+                    const remainingTime = task.totalDuration - elapsedSeconds;
+
+                    if (remainingTime > 0) {
+                        const currentSecond = Math.floor(remainingTime);
+
+                        if (task.lastDisplaySecond !== currentSecond && task.timerEl) {
+                            task.timerEl.textContent = formatTime(remainingTime);
+                            task.lastDisplaySecond = currentSecond;
+                        }
+
+                        if (remainingTime <= 60 && task.isLongest && !task.soundPlayed) {
+                            playArithmeticProgressionBeeps(task);
+                            task.soundPlayed = true;
+                        }
+
+                        if (task.beepSequenceStarted && task.isLongest) {
+                            const taskEndTime = new Date(task.startTime.getTime() + task.totalDuration * 1000);
+                            const secondsBeforeEnd = (taskEndTime.getTime() - now.getTime()) / 1000;
+                            if (task.beepIndex < task.beepTimesBeforeEnd.length) {
+                                const nextBeepTime = task.beepTimesBeforeEnd[task.beepIndex];
+                                if (secondsBeforeEnd <= nextBeepTime) {
+                                    playAlertSound();
+                                    task.beepIndex++;
+                                }
+                            }
+                        }
+                    } else {
+                        activeTasks.splice(i, 1);
+                        task.taskDiv.remove();
+                    }
+                }
+            }, 100);
+        }
+
+        window.addEventListener('load', () => {
+            initAudioContext();
+            startBackgroundTimer();
+        });
+
+        addTask("create first task", 180);
+    </script>
 </body>
+
 </html>
