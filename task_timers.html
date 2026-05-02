@@ -48,6 +48,18 @@
             cursor: pointer;
         }
 
+        #timeDisplay {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #currentPercent {
+            font-weight: bold;
+            font-size: 33px;
+            text-align: right;
+        }
+
         #currentTime {
             font-weight: bold;
             font-size: 33px;
@@ -116,7 +128,10 @@
         <textarea id="taskInput" placeholder="New task" required></textarea>
         <div class="form-footer">
             <button type="submit">Add Task</button>
-            <div id="currentTime">00:00</div>
+            <div id="timeDisplay">
+                <div id="currentPercent">0.0%</div>
+                <div id="currentTime">00:00</div>
+            </div>
         </div>
     </form>
 
@@ -231,12 +246,26 @@
         }
 
         const currentTimeEl = document.getElementById("currentTime");
+        const currentPercentEl = document.getElementById("currentPercent");
 
         function updateClock() {
             const now = new Date();
             const h = String(now.getHours()).padStart(2, "0");
             const m = String(now.getMinutes()).padStart(2, "0");
             currentTimeEl.textContent = `${h}:${m}`;
+
+            // Calculate percentage based on 30-minute cycle (25 min work + 5 min rest)
+            const totalSecondsInHour = now.getMinutes() * 60 + now.getSeconds();
+            const cycleSeconds = totalSecondsInHour % (30 * 60); // position within 30-min cycle
+
+            if (cycleSeconds < 25 * 60) {
+                // Work period: 0.0% to 100.0% over 25 minutes
+                const percent = (cycleSeconds / (25 * 60)) * 100;
+                currentPercentEl.textContent = `${percent.toFixed(1)}%`;
+            } else {
+                // Rest period: show placeholder text
+                currentPercentEl.textContent = "##.#%";
+            }
         }
         setInterval(updateClock, 1000);
         updateClock();
