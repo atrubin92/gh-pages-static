@@ -182,6 +182,12 @@
         let audioContext = null;
         let audioInitialized = false;
 
+        function removeTask(taskData) {
+            const idx = activeTasks.indexOf(taskData);
+            if (idx !== -1) activeTasks.splice(idx, 1);
+            taskData.taskDiv.remove();
+        }
+
         function updateLongestTask(now) {
             if (activeTasks.length === 0) return false;
 
@@ -370,20 +376,13 @@
             timerEl.textContent = formatTime(totalDuration);
 
             completeBtn.onclick = () => {
-                const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
-                if (taskIndex !== -1) {
-                    activeTasks.splice(taskIndex, 1);
-                }
-                taskDiv.remove();
+                removeTask(taskData);
             };
         }
 
         function completeTask(taskDiv) {
-            const taskIndex = activeTasks.findIndex(t => t.taskDiv === taskDiv);
-            if (taskIndex !== -1) {
-                activeTasks.splice(taskIndex, 1);
-            }
-            taskDiv.remove();
+            const taskData = activeTasks.find(t => t.taskDiv === taskDiv);
+            if (taskData) removeTask(taskData);
         }
 
         document.addEventListener('click', initAudioContext);
@@ -439,8 +438,7 @@
                             }
                         }
                     } else {
-                        activeTasks.splice(i, 1);
-                        task.taskDiv.remove();
+                        removeTask(task);
                     }
                 }
             }, 100);
