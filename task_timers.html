@@ -68,6 +68,20 @@
             margin-right: 20px;
         }
 
+        /* Per-second progress bar painted via a CSS linear-gradient
+           with hard color stops, one stop per second of the 25-min cycle. */
+        #cycleProgressBar {
+            width: 100%;
+            height: 20px;
+            background: #d0d0d0; /* shows through before any data is set */
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+        }
+
         .task {
             display: flex;
             justify-content: space-between;
@@ -158,6 +172,8 @@
         <button id="startButton">Click to begin</button>
     </div>
 
+    <div id="cycleProgressBar"></div>
+
     <form id="taskForm">
         <textarea id="taskInput" placeholder="New task" required></textarea>
         <div class="form-footer">
@@ -185,6 +201,31 @@
         // Tracks the last 30-minute cycle index for which we auto-added a task,
         // so we don't add multiple times within the same cycle boundary.
         let lastAutoAddCycleIndex = null;
+
+        // ---- Progress bar state ------------------------------------------------
+        // The 25-min work portion is divided into WORK_SECONDS slots, one per
+        // second. Each slot holds the recorded state for that past second:
+        //   "green"     : a task was active during that second
+        //   "missed"    : no task ran during that second (light red)
+        //   "darkgray"  : the timer wasn't running yet during that second
+        //                 (user clicked Start later, or this is before the cycle)
+        // Slots in the future are not stored; they're rendered based on whether
+        // a currently-running task's remaining time still covers that second:
+        //   "lightgreen": within the remaining time of an active task, so it
+        //                 will become green if the task runs to completion
+        //   "lightgray" : beyond any active task's remaining time, undefined
+        const WORK_SECONDS = 25 * 60;
+        let cycleSlots = new Array(WORK_SECONDS).fill("darkgray");
+        let currentCycleIndex = null; // matches getCurrentCycleIndex()
+        let timerStarted = false;     // becomes true once the user clicks Start
+
+        const COLORS = {
+            green:      "#44aa44",
+            missed:     "#f4b0b0", // light red
+            darkgray:   "#888888",
+            lightgreen: "#bde5bd",
+            lightgray:  "#d8d8d8"
+        };
 
         function removeTask(taskData) {
             const idx = activeTasks.indexOf(taskData);
@@ -291,6 +332,131 @@
 
         const currentTimeEl = document.getElementById("currentTime");
         const currentPercentEl = document.getElementById("currentPercent");
+        const cycleProgressBarEl = document.getElementById("cycleProgressBar");
+
+        // Returns { cycleIndex, cycleSecond } where cycleSecond is the elapsed
+        // seconds since the start of the current 30-min cycle (0..1799).
+        function getCyclePosition(now) {
+            const cycleMs = 30 * 60 * 1000;
+            return {
+                cycleIndex: Math.floor(now.getTime() / cycleMs),
+                cycleSecond: Math.floor((now.getTime() % cycleMs) / 1000)
+            };
+        }
+
+        // Reset slots when entering a new 30-min cycle.
+        function resetCycleSlots() {
+            cycleSlots = new Array(WORK_SECONDS).fill("darkgray");
+        }
+
+        // Record the state for the current second of the work portion.
+        function recordCurrentSecond(now) {
+            const { cycleIndex, cycleSecond } = getCyclePosition(now);
+
+            if (currentCycleIndex === null) {
+                currentCycleIndex = cycleIndex;
+                resetCycleSlots();
+            } else if (cycleIndex !== currentCycleIndex) {
+                currentCycleIndex = cycleIndex;
+                resetCycleSlots();
+            }
+
+            // Only the work portion (first 25 min) is recorded; rest portion
+            // (last 5 min) doesn't touch the bar.
+            if (cycleSecond >= WORK_SECONDS) return;
+
+            // The current second's state: green if a task is active and the
+            // timer was started; missed if the timer was started but no task
+            // is active; darkgray remains if the timer hasn't started yet.
+            let state;
+            if (!timerStarted) {
+                state = "darkgray";
+            } else if (activeTasks.length > 0) {
+                state = "green";
+            } else {
+                state = "missed";
+            }
+
+            // Priority: green > missed > darkgray, so a slot can't be downgraded.
+            const priority = { green: 3, missed: 2, darkgray: 1 };
+            const existing = cycleSlots[cycleSecond];
+            if (priority[state] >= priority[existing]) {
+                cycleSlots[cycleSecond] = state;
+            }
+        }
+
+        // Returns the maximum remaining seconds across all active tasks (0 if none).
+        // This is how far into the future the bar can confidently be painted
+        // light green: any second beyond this point is undefined (light gray).
+        function getMaxRemainingSeconds(now) {
+            let maxRemaining = 0;
+            activeTasks.forEach(task => {
+                const elapsedSeconds = (now - task.startTime) / 1000;
+                const remaining = task.totalDuration - elapsedSeconds;
+                if (remaining > maxRemaining) maxRemaining = remaining;
+            });
+            return maxRemaining;
+        }
+
+        // Build a CSS linear-gradient that paints each second as a hard color
+        // stop. Past seconds use the recorded slot value; future seconds use
+        // lightgreen if covered by an active task's remaining time, otherwise
+        // lightgray.
+        function repaintProgressBar(now) {
+            const { cycleSecond } = getCyclePosition(now);
+            const playhead = Math.min(cycleSecond, WORK_SECONDS);
+
+            // The future is split into two regions:
+            //   [playhead .. lightGreenEnd) → lightgreen (covered by a task)
+            //   [lightGreenEnd .. WORK_SECONDS) → lightgray (undefined)
+            const maxRemaining = timerStarted ? getMaxRemainingSeconds(now) : 0;
+            const lightGreenEnd = Math.min(
+                WORK_SECONDS,
+                playhead + Math.ceil(maxRemaining)
+            );
+
+            const colorAt = (i) => {
+                if (i < playhead) return COLORS[cycleSlots[i]];
+                if (i < lightGreenEnd) return COLORS.lightgreen;
+                return COLORS.lightgray;
+            };
+
+            // Run-length encode the per-second colors into segments to keep
+            // the gradient string compact.
+            const total = WORK_SECONDS;
+            const segments = [];
+            let segStart = 0;
+            let segColor = null;
+
+            for (let i = 0; i < total; i++) {
+                const c = colorAt(i);
+                if (segColor === null) {
+                    segColor = c;
+                    segStart = i;
+                } else if (c !== segColor) {
+                    segments.push({
+                        color: segColor,
+                        startPct: (segStart / total) * 100,
+                        endPct: (i / total) * 100
+                    });
+                    segColor = c;
+                    segStart = i;
+                }
+            }
+            segments.push({
+                color: segColor,
+                startPct: (segStart / total) * 100,
+                endPct: 100
+            });
+
+            const stops = [];
+            segments.forEach((seg) => {
+                stops.push(`${seg.color} ${seg.startPct.toFixed(3)}%`);
+                stops.push(`${seg.color} ${seg.endPct.toFixed(3)}%`);
+            });
+            cycleProgressBarEl.style.backgroundImage =
+                `linear-gradient(to right, ${stops.join(", ")})`;
+        }
 
         function updateClock() {
             const now = new Date();
@@ -313,6 +479,16 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // Drive the progress bar at 1Hz (independent of the existing 100ms
+        // background loop, which handles per-task countdowns and audio).
+        setInterval(() => {
+            const now = new Date();
+            recordCurrentSecond(now);
+            repaintProgressBar(now);
+        }, 1000);
+        // Initial paint so the bar isn't blank on page load.
+        repaintProgressBar(new Date());
 
         const taskForm = document.getElementById("taskForm");
         const taskInput = document.getElementById("taskInput");
@@ -381,7 +557,14 @@
 
             completeBtn.onclick = () => {
                 removeTask(taskData);
+                // Repaint immediately: lightgreen extent shrinks (or disappears)
+                // when a task is completed early.
+                repaintProgressBar(new Date());
             };
+
+            // Repaint immediately so the lightgreen extent reflects the new
+            // task's remaining time without waiting for the next 1-second tick.
+            repaintProgressBar(new Date());
         }
 
         function completeTask(taskDiv) {
@@ -476,6 +659,10 @@
                         removeTask(task);
                     }
                 }
+
+                // After tasks may have been removed by expiry, reflect the
+                // shrunk lightgreen extent immediately.
+                repaintProgressBar(now);
             }, 100);
         }
 
@@ -485,6 +672,7 @@
 
         startButton.addEventListener("click", () => {
             initAudioContext();
+            timerStarted = true;
             startBackgroundTimer();
             addTask("create first task", 180);
             startOverlay.remove();
