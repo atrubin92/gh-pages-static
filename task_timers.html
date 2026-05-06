@@ -182,6 +182,10 @@
         let audioContext = null;
         let audioInitialized = false;
 
+        // Tracks the last 30-minute cycle index for which we auto-added a task,
+        // so we don't add multiple times within the same cycle boundary.
+        let lastAutoAddCycleIndex = null;
+
         function removeTask(taskData) {
             const idx = activeTasks.indexOf(taskData);
             if (idx !== -1) activeTasks.splice(idx, 1);
@@ -385,6 +389,34 @@
             if (taskData) removeTask(taskData);
         }
 
+        // Returns an integer that uniquely identifies the current 30-minute cycle.
+        // Cycles begin at :00 and :30 of every hour.
+        function getCurrentCycleIndex(now) {
+            // Number of full 30-minute periods since the Unix epoch.
+            return Math.floor(now.getTime() / (30 * 60 * 1000));
+        }
+
+        // Checks once per tick whether we've crossed into a new 30-min cycle
+        // with no active tasks; if so, auto-add the "create first task" task.
+        function maybeAutoAddTask(now) {
+            const cycleIndex = getCurrentCycleIndex(now);
+
+            // Initialize on first run so we don't immediately auto-add at startup
+            // (the start button already adds the initial task).
+            if (lastAutoAddCycleIndex === null) {
+                lastAutoAddCycleIndex = cycleIndex;
+                return;
+            }
+
+            if (cycleIndex !== lastAutoAddCycleIndex) {
+                // We've entered a new 30-minute cycle.
+                lastAutoAddCycleIndex = cycleIndex;
+                if (activeTasks.length === 0) {
+                    addTask("create first task", 180);
+                }
+            }
+        }
+
         document.addEventListener('click', initAudioContext);
         document.addEventListener('keydown', initAudioContext);
         document.addEventListener('touchstart', initAudioContext);
@@ -401,6 +433,9 @@
 
             backgroundTimerInterval = setInterval(() => {
                 const now = new Date();
+
+                // Auto-add "create first task" at each 30-min boundary if idle.
+                maybeAutoAddTask(now);
 
                 const changed = updateLongestTask(now);
                 if (changed) {
