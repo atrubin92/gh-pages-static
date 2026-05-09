@@ -72,36 +72,45 @@
     <script>
         const longPressTimeout = 2_000;
 
-        let longPressTimer;
+        let longPressTimer = null;
+        let longPressTriggered = false;
+        let pressActive = false;
 
         const bodyElement = document.body;
-
-        bodyElement.addEventListener('mousedown', (event) => {
-            longPressTimer = setTimeout(() => handleLongPress(event), longPressTimeout);
-        });
-
-        bodyElement.addEventListener('mouseup', () => {
-            clearTimeout(longPressTimer);
-        });
-
-        bodyElement.addEventListener('touchstart', (event) => {
-            longPressTimer = setTimeout(() => handleLongPress(event), longPressTimeout);
-        });
-
-        bodyElement.addEventListener('touchend', () => {
-            clearTimeout(longPressTimer);
-        });
-
         const endTimeOfLevelsDiv = document.getElementById("endTimeOfLevels");
 
-        function handleLongPress(event) {
-            if (endTimeOfLevelsDiv.style.visibility === "visible") {
-                endTimeOfLevelsDiv.style.visibility = "hidden";
-            } else {
-                endTimeOfLevelsDiv.style.visibility = "visible";
-            }
-            event.preventDefault();
+        function startPress(event) {
+            // Ignore the synthesized mouse event that follows a touch.
+            if (pressActive) return;
+            pressActive = true;
+            longPressTriggered = false;
+
+            clearTimeout(longPressTimer);
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                if (endTimeOfLevelsDiv.style.visibility === "visible") {
+                    endTimeOfLevelsDiv.style.visibility = "hidden";
+                } else {
+                    endTimeOfLevelsDiv.style.visibility = "visible";
+                }
+            }, longPressTimeout);
         }
+
+        function endPress() {
+            pressActive = false;
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+            // Reset the touch-suppression flag shortly after, so the trailing
+            // synthesized mouse events from this gesture are ignored but the
+            // next real interaction works.
+            setTimeout(() => { /* noop, just lets the event loop drain */ }, 0);
+        }
+
+        bodyElement.addEventListener('touchstart', startPress, { passive: true });
+        bodyElement.addEventListener('touchend', endPress);
+        bodyElement.addEventListener('touchcancel', endPress);
+        bodyElement.addEventListener('mousedown', startPress);
+        bodyElement.addEventListener('mouseup', endPress);
     </script>
 
     <script>
@@ -116,7 +125,7 @@
         const nextLevelTimerEl = document.getElementById('nextLevelTimer');
 
         nextLevelResultEl.textContent = "current level: 1"
-        nextLevelTimerEl.textContent = "123"
+        nextLevelTimerEl.textContent = ""
 
         let moveNextLevel = false
 
@@ -125,8 +134,6 @@
         let timerStart = new Date();
 
         function createTable() {
-            const endTimeOfLevelsDiv = document.getElementById("endTimeOfLevels");
-
             const table = document.createElement("table");
             table.classList.add("center-table");
 
@@ -178,7 +185,7 @@
                 clearInterval(countdown);
                 document.body.style.backgroundColor = "red";
                 currentLevelTimerEl.textContent = "time is up"
-                document.body.removeEventListener('click', nextLevelClickHandler);
+                bodyElement.removeEventListener('click', nextLevelClickHandler);
             } else {
                 let timeInMilliseconds = timerStart.getTime();
                 timeInMilliseconds += intervalSeconds * millisecondsPerSecond;
@@ -193,7 +200,13 @@
 
         let countdown = setInterval(updateTimer, 100);
 
-        const nextLevelClickHandler = () => {
+        const nextLevelClickHandler = (event) => {
+            // If the user just performed a long-press, swallow the trailing click.
+            if (longPressTriggered) {
+                longPressTriggered = false;
+                return;
+            }
+
             if (moveNextLevel) {
                 return
             }
@@ -213,7 +226,7 @@
                 return
             }
         };
-        document.body.addEventListener('click', nextLevelClickHandler);
+        bodyElement.addEventListener('click', nextLevelClickHandler);
     </script>
 </body>
 
