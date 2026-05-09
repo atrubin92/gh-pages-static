@@ -74,15 +74,15 @@
 
         let longPressTimer = null;
         let longPressTriggered = false;
-        let pressActive = false;
+        let pressSource = null; // 'touch' | 'mouse' | null
 
         const bodyElement = document.body;
         const endTimeOfLevelsDiv = document.getElementById("endTimeOfLevels");
 
-        function startPress(event) {
+        function startPress(source) {
             // Ignore the synthesized mouse event that follows a touch.
-            if (pressActive) return;
-            pressActive = true;
+            if (pressSource !== null) return;
+            pressSource = source;
             longPressTriggered = false;
 
             clearTimeout(longPressTimer);
@@ -96,21 +96,20 @@
             }, longPressTimeout);
         }
 
-        function endPress() {
-            pressActive = false;
+        function endPress(source) {
+            // Only the input type that started the press can end it; synthesized
+            // mouseup after a touchend must not cancel an unrelated press.
+            if (pressSource !== source) return;
+            pressSource = null;
             clearTimeout(longPressTimer);
             longPressTimer = null;
-            // Reset the touch-suppression flag shortly after, so the trailing
-            // synthesized mouse events from this gesture are ignored but the
-            // next real interaction works.
-            setTimeout(() => { /* noop, just lets the event loop drain */ }, 0);
         }
 
-        bodyElement.addEventListener('touchstart', startPress, { passive: true });
-        bodyElement.addEventListener('touchend', endPress);
-        bodyElement.addEventListener('touchcancel', endPress);
-        bodyElement.addEventListener('mousedown', startPress);
-        bodyElement.addEventListener('mouseup', endPress);
+        bodyElement.addEventListener('touchstart', () => startPress('touch'), { passive: true });
+        bodyElement.addEventListener('touchend', () => endPress('touch'));
+        bodyElement.addEventListener('touchcancel', () => endPress('touch'));
+        bodyElement.addEventListener('mousedown', () => startPress('mouse'));
+        bodyElement.addEventListener('mouseup', () => endPress('mouse'));
     </script>
 
     <script>
