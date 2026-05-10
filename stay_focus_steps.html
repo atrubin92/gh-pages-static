@@ -136,13 +136,15 @@
             const table = document.createElement("table");
             table.classList.add("center-table");
 
-            let endOfLevel = new Date(timerStart.getTime())
+            let cumulativeSeconds = 0;
 
             for (let levelNumber = 1; levelNumber <= 30; levelNumber++) {
-                endOfLevel.setTime(
-                    endOfLevel.getTime() +
-                    additionalSecondPerRound * millisecondsPerSecond * levelNumber
-                )
+                // Level n lasts (additionalSecondPerRound * n) seconds, mirroring
+                // the game logic where intervalSeconds grows by that amount each level.
+                cumulativeSeconds += additionalSecondPerRound * levelNumber;
+                const endOfLevel = new Date(
+                    timerStart.getTime() + cumulativeSeconds * millisecondsPerSecond
+                );
 
                 const row = document.createElement("tr");
 
