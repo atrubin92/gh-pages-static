@@ -187,12 +187,17 @@
                 document.body.style.backgroundColor = "red";
                 currentLevelTimerEl.textContent = "time is up"
                 bodyElement.removeEventListener('click', nextLevelClickHandler);
-            } else {
-                let timeInMilliseconds = timerStart.getTime();
-                timeInMilliseconds += intervalSeconds * millisecondsPerSecond;
-                timerStart.setTime(timeInMilliseconds);
-                intervalSeconds += additionalSecondPerRound;
+                // BUGFIX: stop here on game-over. Without this return, the code
+                // below would overwrite nextLevelResultEl with the level label
+                // and reset nextLevelTimerStart even though the game has ended.
+                return;
             }
+
+            let timeInMilliseconds = timerStart.getTime();
+            timeInMilliseconds += intervalSeconds * millisecondsPerSecond;
+            timerStart.setTime(timeInMilliseconds);
+            intervalSeconds += additionalSecondPerRound;
+
             nextLevelResultEl.textContent = "current level: " + (Math.floor(intervalSeconds / additionalSecondPerRound));
             nextLevelTimerEl.textContent = "";
             nextLevelTimerStart = new Date();
