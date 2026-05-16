@@ -229,7 +229,12 @@
             timeInMilliseconds += millisecondsPerSecond;
             nextLevelTimerStart.setTime(timeInMilliseconds);
 
-            if (nextLevelTimerStart.getTime() - new Date() > 3 * millisecondsPerSecond) {
+            // BUGFIX: use ">=" instead of ">". With strict ">", 3 instantaneous
+            // clicks bank exactly 3000ms ahead, which fails the check and never
+            // commits. Combined with real time elapsing between clicks, this
+            // forced ~4 frantic clicks to ever advance. ">=" makes 3 fast
+            // clicks the intended commit threshold.
+            if (nextLevelTimerStart.getTime() - new Date() >= 3 * millisecondsPerSecond) {
                 const currentLevelValue = Math.floor(intervalSeconds / additionalSecondPerRound);
                 nextLevelResultEl.textContent = "level: " + currentLevelValue + " ➙ " + (currentLevelValue + 1);
                 moveNextLevel = true;
