@@ -170,9 +170,14 @@
 
             const nextLevelMilliseconds = nextLevelTimerStart.getTime() - new Date();
             if (nextLevelMilliseconds > 0 && moveNextLevel == false) {
-                const nextLevelSecondsStr = Math.floor(nextLevelMilliseconds / millisecondsPerSecond);
-                const nextLevelMillisecondsStr = Math.floor((nextLevelMilliseconds % millisecondsPerSecond) / 100);
-                nextLevelTimerEl.textContent = nextLevelSecondsStr + '.' + nextLevelMillisecondsStr;
+                // BUGFIX: display the fractional part as a zero-padded tenths
+                // digit. Previously the tenths value (0-9) was concatenated
+                // without padding, producing "2.0" when the true value was
+                // 2.05s, then "1.9", making the countdown look jerky/broken.
+                const totalTenths = Math.floor(nextLevelMilliseconds / 100);
+                const wholeSeconds = Math.floor(totalTenths / 10);
+                const tenths = totalTenths % 10;
+                nextLevelTimerEl.textContent = wholeSeconds + '.' + tenths;
             } else {
                 nextLevelTimerEl.textContent = "";
             }
